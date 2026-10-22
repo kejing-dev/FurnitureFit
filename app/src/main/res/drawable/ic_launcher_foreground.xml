@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher foreground (108 x 108, content inside the 66 dp safe zone): a sofa on its tape footprint,
+     the yellow gap tape running out to a wall. Same shapes as tools/make_icon.py (3D icon layers, 512 export). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- footprint tape on the floor -->
+    <path android:fillColor="#FF1F5FCC" android:pathData="M20,76h54v3h-54z" />
+    <!-- sofa: back, seat, arms, legs -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M29,38h36a3,3 0,0 1,3 3v13h-42v-13a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFE3ECFF" android:pathData="M28,54h38v12h-38z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M25,47h2a3,3 0,0 1,3 3v20h-8v-20a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M67,47h2a3,3 0,0 1,3 3v20h-8v-20a3,3 0,0 1,3 -3z" />
+    <path android:fillColor="#FF16181C" android:pathData="M24,70h3v5h-3z M67,70h3v5h-3z" />
+    <!-- gap tape: red zero end, yellow blade, ink ticks -->
+    <path android:fillColor="#FFFFC72C" android:pathData="M72,56h11v5h-11z" />
+    <path android:fillColor="#FFE23B2E" android:pathData="M72,56h1.6v5h-1.6z" />
+    <path android:fillColor="#FF16181C" android:pathData="M75.6,56h0.6v2.6h-0.6z M78.6,56h0.6v1.8h-0.6z M81.6,56h0.6v2.6h-0.6z" />
+    <!-- the wall -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M83,34h3v45h-3z" />
+</vector>

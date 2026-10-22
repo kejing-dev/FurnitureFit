@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">家具试摆</string>
+    <string name="lang_code">zh</string>
+    <string name="action_undo">撤销</string>
+    <string name="action_more">更多</string>
+    <string name="action_rotate">转 90°</string>
+    <string name="action_remove">删除</string>
+    <string name="action_size">尺寸</string>
+    <string name="axis_w">宽</string>
+    <string name="axis_d">深</string>
+    <string name="axis_h">高</string>
+    <string name="look">外观</string>
+    <string name="look_solid">实体</string>
+    <string name="look_wire">线框</string>
+    <string name="lang_system">跟随系统</string>
+    <string name="menu_clear">全部清除</string>
+    <string name="menu_exit">退出</string>
+    <string name="dialog_clear_body">清除后无法撤销。</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_clear">清除</string>
+    <string name="blocked_title">空间能力不可用</string>
+    <string name="blocked_body">请在系统设置中允许平面识别和空间锚点。</string>
+    <string name="action_exit">退出</string>
+    <string name="action_retry">重试</string>
+    <string name="snack_scanning">慢慢看一圈房间</string>
+    <string name="snack_no_floor">慢慢看看地面</string>
+    <string name="snack_elsewhere">上次的摆法不在这里</string>
+    <string name="snack_unsaved">没能保存</string>
+    <string name="snack_limit">最多 12 件</string>
+    <string name="snack_lost">定位丢失 · 环顾四周</string>
+    <string name="snack_cleared">已全部清除</string>
+    <string name="coach">按住拖到墙边</string>
+    <string name="coach_ok">知道了</string>
+    <string name="verdict_fits">放得下</string>
+    <string name="verdict_door">挡门</string>
+    <string name="verdict_collide">撞了</string>
+    <string name="gap_tight">人过不去</string>
+    <string name="gap_passable">人过得去</string>
+    <string name="key_ok">确定</string>
+    <string name="key_back">退格</string>
+    <string name="starting">准备中</string>
+    <string name="pieces_count">%1$d 件</string>
+    <plurals name="snack_restored">
+        <item quantity="other">已找回 %1$d 件</item>
+    </plurals>
+</resources>

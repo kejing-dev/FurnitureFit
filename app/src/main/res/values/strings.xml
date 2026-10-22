@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Furniture Fit</string>
+    <string name="lang_code">en</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_more">More</string>
+    <string name="action_rotate">Rotate 90°</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_size">Size</string>
+    <string name="axis_w">W</string>
+    <string name="axis_d">D</string>
+    <string name="axis_h">H</string>
+    <string name="look">Look</string>
+    <string name="look_solid">Solid</string>
+    <string name="look_wire">Wireframe</string>
+    <string name="lang_system">Follow system</string>
+    <string name="lang_zh" translatable="false">中文</string>
+    <string name="lang_en">English</string>
+    <string name="lang_en_short" translatable="false">EN</string>
+    <string name="unit_cm" translatable="false">cm</string>
+    <string name="unit_in" translatable="false">in</string>
+    <string name="menu_clear">Clear all</string>
+    <string name="menu_exit">Exit</string>
+    <string name="dialog_clear_body">This can\'t be undone.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_clear">Clear</string>
+    <string name="blocked_title">Spatial features unavailable</string>
+    <string name="blocked_body">Allow plane detection and anchors in Settings.</string>
+    <string name="action_exit">Exit</string>
+    <string name="action_retry">Retry</string>
+    <string name="snack_scanning">Look around the room</string>
+    <string name="snack_no_floor">Look at the floor</string>
+    <string name="snack_elsewhere">Last layout isn\'t here</string>
+    <string name="snack_unsaved">Not saved</string>
+    <string name="snack_limit">Max 12 pieces</string>
+    <string name="snack_lost">Tracking lost · look around</string>
+    <string name="snack_cleared">All cleared</string>
+    <string name="coach">Hold and drag to a wall</string>
+    <string name="coach_ok">Got it</string>
+    <string name="verdict_fits">Fits</string>
+    <string name="verdict_door">Blocks door</string>
+    <string name="verdict_collide">Collides</string>
+    <string name="gap_tight">Too tight to pass</string>
+    <string name="gap_passable">Passable</string>
+    <string name="key_ok">OK</string>
+    <string name="key_back">Delete</string>
+    <string name="starting">Getting ready</string>
+    <string name="pieces_count">%1$d pieces</string>
+    <plurals name="snack_restored">
+        <item quantity="one">%1$d piece restored</item>
+        <item quantity="other">%1$d pieces restored</item>
+    </plurals>
+</resources>

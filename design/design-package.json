@@ -1,0 +1,1170 @@
+{
+  "appId": "furniture-fit",
+  "name": "家具试摆 Furniture Fit",
+  "nameZh": "家具试摆",
+  "nameEn": "Furniture Fit",
+  "packageName": "io.embodit.furniturefit",
+  "version": "v1",
+  "oneLiner": "1.6 米的沙发放得下吗？点一下，它就 1:1 落在你家地板上；按住拖到墙边自动贴上，四边拉出卷尺告诉你还剩几厘米、人走不走得过去。",
+  "source": {
+    "kind": "port",
+    "poolId": "furniture-fit",
+    "references": [
+      {
+        "name": "IKEA Place",
+        "platform": "iOS (ARKit)",
+        "url": "https://www.ikea.com/global/en/newsroom/innovation/ikea-launches-ikea-place-a-new-app-that-allows-people-to-virtually-place-furniture-in-their-home-170912/",
+        "took": "交互参考：1:1 真实尺寸摆放、放置 → 移动 → 旋转 → 落地阴影、保存（不含其商品数据库）"
+      },
+      {
+        "name": "Meta Layout",
+        "platform": "Meta Quest 3 / 3S v68 系统工具",
+        "url": "https://www.meta.com/blog/meta-quest-v68-update-layout-performance-improvements/",
+        "took": "在 MR 里摆虚拟家具看合不合适；系统工具式的极简界面"
+      },
+      {
+        "name": "空间尺 Spatial Ruler（同骨架）",
+        "platform": "本产线已交付应用",
+        "url": null,
+        "took": "Stage·Mixed 场景骨架、平面薄盒碰撞、系统指点落点、系统拖动换算、世界锚点持久化、尺带 + 读数牌、预建面板池、自建对话框 / 提示条、图标优先规格"
+      }
+    ],
+    "port": {
+      "keep": [
+        "按真实尺寸摆放，输入自定义 W×D×H",
+        "放置 → 移动 → 旋转 → 确认流程与落地阴影",
+        "保存方案（自动保存当前房间的摆法）"
+      ],
+      "spatialize": [
+        "落在 FLOOR 平面上；拖到墙边 5 cm 内自动贴墙；四边拉出空间尺尺带，读出到墙 / 到别的家具的净距",
+        "穿进墙、别的家具或认出的真实家具时盒子变红 ✕；碰撞用 PlaneAnchor.vertices + transform 自建薄盒 / OBB 几何测试，不用 createStaticMesh 墙平面",
+        "0.8 m 通道：四边净距 < 80 cm 的读数牌变橙「人过不去」，≥ 80 cm 变绿；挡在门前 0.8 m 内的家具标 ▲ 挡门；人走进家具里时家具变半透明",
+        "每件家具一个世界锚点，退出重进仍在原处"
+      ],
+      "drop": [
+        "商品目录 / 购物车 / 账号",
+        "照片擦除 / AI 合成",
+        "LiDAR 扫描流程",
+        "任何测量模式 UI（首屏不露空间尺；尺带只作家具四边的净距读数出现）"
+      ]
+    }
+  },
+  "archetype": "D",
+  "container": {
+    "type": "STAGE_MIXED",
+    "space": "只有 Full Space · Stage · Mixed（透视）；没有 Shared Space 版本，也不留降级路径",
+    "why": "透视、平面识别、世界锚点只在 Full Space 可用；家具比任何窗口都大，要 1:1 落在真实地板上、绕着走、从门口看。",
+    "permissions": [
+      "平面识别 / 空间锚点（模拟器不需要运行时权限；真机未确认，按空间尺的「不可用」对话框兜底）"
+    ],
+    "lifecycle": "启动即 start 平面检测与空间网格；空间网格在「找地面 / 扫描房间」期间与之后 60 s 内持续更新（低 LOD），之后若 10 s 内没有新增网格锚点就把当前真实家具体缓存下来并 stop 网格提供者（文档建议：不需要实时更新时停用以省资源）；退后台 stop 全部 Tracker、取消协程、隐藏面板池；回前台重新 start。",
+    "notes": [
+      "Stage 内不用 AlertDialog / SnackbarHost（空间尺实测：AlertDialog 不出内容、SnackbarHost 不支持）：清除确认、不可用、提示条都是预建附着面板，用 SpatialUI Button / Text 按组件规格拼",
+      "附着面板 1 dp = 0.8 mm（缩放 1），单块高度 ≤ 720 dp；面板从预建池里取，隐藏不移除，隐藏时停用 holder（否则抢指针）",
+      "LookAtComponent 只转画面不转命中面：所有朝向由 ECS System 每帧写承载实体",
+      "SpatialView.update 不是每帧：拖动、碰撞、净距、半透明判定都在 registerSystem 的 ECS System 里",
+      "首次建网格约 3 s 阻塞主线程：模型与尺带刻度段在「准备中」分帧预建",
+      "包住房间的兜底碰撞体（同空间尺）：只用来接「点空了」= 取消选中 / 关菜单",
+      "所有 2D 面板都是 Stage 内附着面板（AttachmentPanel），没有 WindowContainer / Planar 窗口、没有 Shared Space"
+    ],
+    "mrCapabilities": {
+      "used": [
+        "平面检测 PlaneTrackingManager / PlaneAnchor（semantics、vertices、transform、planeOrientation）：地板高度与范围、墙 / 门 / 窗四边形、真实家具顶面",
+        "空间网格 MeshTrackingManager / MeshAnchor（逐顶点 semantics，含 SOFA / CHAIR / TABLE / BED / CABINET / REFRIGERATOR / WASHING_MACHINE / PLANT / LAMP / COLUMN 等，及 vertices、boundingBoxSize、transform）：识别真实家具的占地与高度，用于碰撞、净距与通道检查；DOOR / OPENING 顶点补门洞位置",
+        "空间锚点：房间锚点持久化"
+      ],
+      "sceneCapture": "已查 pico-dev-knowledge 与本机 SDK 6.1 文档库（agent-vault/spatial，documentation + api-reference 全文检索 scene capture / scene understanding / scene model）：没有名为 scene capture 或场景理解的公开 API。环境感知只有 平面检测、空间网格、空间锚点（另有键盘追踪，与本应用无关）。所以「场景理解」用 空间网格 + 语义 实现。系统设置里的房间扫描数据是否直接喂给这两个 Tracker：未确认，研发站在真机上核对；本设计不依赖它，应用内边看边扫。",
+      "requires": "三者都标 @RequiredFullSpace，与 STAGE_MIXED 一致"
+    }
+  },
+  "windowModel": "single_panel_with_popup",
+  "referenceRepo": "C:/Users/Admin/Downloads/spatial-ruler",
+  "reuseFromReference": [
+    "domain/model Vec3、Surface（平面四边形 + 语义）、HitSurfaceUseCase（双面射线—四边形解析求交）",
+    "平面薄盒碰撞体 + InteractableComponent（系统指点点地板落点）",
+    "系统拖动 → 指向线换算（RulerScene 的按下点等效深度模型）",
+    "AnchorGateway / SessionRepository / SessionJsonCodec（世界锚点 create / load、空库 -7 当空）",
+    "尺带网格（10 cm 刻度段平铺）与读数牌 pill（一行数字）、骑码 + 立杆",
+    "TagCard（玻璃根 + plateInk 内卡）、自建对话框 / 提示条面板、预建面板池、每帧朝向 System",
+    "懒跟随（尺身的视野左下规则，改挂家具库面板）",
+    "字体打包（Noto Sans + Noto Sans CJK SC）、运行时切语言",
+    "空间网格：空间尺 spike 已在模拟器建过网格（首次约 3 s 主线程阻塞，要分帧）"
+  ],
+  "frame": {
+    "subject": "搬家、买家具前的「放得下吗」。量房摆位，不是电商。",
+    "viewer": "戴 PICO OS 6 头显的人，站在自己家客厅 / 卧室，会走几步、绕到另一边、从门口回头看。一次 5–10 分钟：试一两件家具，摘下。",
+    "singleJob": "把一件家具按真实尺寸放进真实房间，一眼回答：放得下吗、离墙还剩多少、人还走不走得过去。",
+    "spatialJustification": [
+      {
+        "task": "放下一件家具",
+        "affordance": "Position + Scale",
+        "why": "1:1 落在真实地板上，自己站在旁边就知道它多大",
+        "counterfactual2D": "手机 AR 隔着屏幕看，没有身体尺度；户型图软件要先量房画图"
+      },
+      {
+        "task": "判断放不放得下",
+        "affordance": "Body + Collision",
+        "why": "穿墙 / 撞柜子当场变红；绕到侧面看缝",
+        "counterfactual2D": "户型图里的矩形不知道踢脚线、窗台、柜子的真实位置"
+      },
+      {
+        "task": "离墙、离别的家具还剩多少",
+        "affordance": "Distance",
+        "why": "卷尺直接拉在家具和墙之间，读数在缝上",
+        "counterfactual2D": "拿真卷尺量空位再心算减家具尺寸"
+      },
+      {
+        "task": "人走不走得过去、挡不挡门",
+        "affordance": "Body + Motion",
+        "why": "自己走过那条缝；门前区域当场亮",
+        "counterfactual2D": "户型图上靠想象"
+      },
+      {
+        "task": "改尺寸、换一件、语言单位",
+        "affordance": "无",
+        "why": "没有空间收益，保持 2D，缩到一块面板",
+        "counterfactual2D": "同 2D"
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "一次摆 1–6 件，上限 12 件",
+        "confidence": "中",
+        "ifWrong": "超过 12 件要分房间 / 分方案管理"
+      },
+      {
+        "text": "家具朝向只取房间轴向（0 / 90 / 180 / 270°），不做自由角度",
+        "confidence": "中",
+        "ifWrong": "加一个 15° 步进或拖动转盘"
+      },
+      {
+        "text": "家具外观用基本形状按 W×D×H 比例拼成，足够认出是什么家具",
+        "confidence": "中",
+        "ifWrong": "换成更细的配方（多几块盒子），仍不引入外部模型"
+      },
+      {
+        "text": "真机能认出 FLOOR / WALL / DOOR，真实家具只认出顶面（TABLE / CABINET / BED 等）",
+        "confidence": "中（模拟器房间已验证这些语义；真机覆盖度未知）",
+        "ifWrong": "真实家具碰撞提示降级为只认墙和门"
+      },
+      {
+        "text": "按真实家具顶面四边形向下延伸到地板，当作障碍柱",
+        "confidence": "低（推断）",
+        "ifWrong": "真机误报多时关闭真实家具碰撞，只留墙 / 门 / 其他虚拟家具"
+      }
+    ]
+  },
+  "explore": {
+    "directions": [
+      {
+        "id": "A",
+        "name": "尺寸盒 + 美纹纸脚印 + 卷尺净距",
+        "concept": "每件家具是一个 1:1 尺寸盒（外观用基本形状拼成），落地时地上贴出一圈蓝色美纹纸脚印；选中时四边拉出空间尺尺带读净距；撞了变红。",
+        "signature": "落地 → 美纹纸脚印 → 拖到墙边「嗒」贴上 → 四边卷尺读数"
+      },
+      {
+        "id": "B",
+        "name": "真模型优先（IKEA Place 式）",
+        "concept": "以写实模型为主，模型库 + 放置 + 旋转，尺寸靠模型自身。",
+        "signature": "逼真的模型"
+      },
+      {
+        "id": "C",
+        "name": "只贴地面胶带（搬家工人式）",
+        "concept": "不放 3D 体，只在地上贴脚印矩形 + 一根高度杆。",
+        "signature": "地上胶带图"
+      }
+    ],
+    "chosen": "A",
+    "whyChosen": "唯一同时回答「放得下 / 离墙多少 / 走不走得过」三问的方向；尺寸盒是真值，模型只是皮；复用空间尺的尺带与碰撞几何。",
+    "rejected": [
+      {
+        "id": "B",
+        "why": "写实模型要商品库或模型资产（drop 项，且用户确认用基本形状即可）；尺寸不可改就答不了「我要买的那款 160 宽的」。保留：实体外观作为可切换的皮。"
+      },
+      {
+        "id": "C",
+        "why": "没有高度，答不了「柜子挡不挡窗台」「床头比窗沿高不高」；没有体积就没有空间媒介承重。保留：美纹纸脚印作为每件家具的落地标记。"
+      }
+    ]
+  },
+  "informationArchitecture": {
+    "resident": "家具库面板（唯一常驻，懒跟随在视野左下）：第 1 行只有撤销 · 更多（件数 ≥ 10 时才在中间显示「10/12」）；下面 11 个模板格子（10 个家具 + 自定义），每格只有图标 + 尺寸",
+    "onSelection": "件条（选中家具时出现在它朝向你的那一侧上方）：放得下判定 · 尺寸 · 转 90° · 删除；点「尺寸」展开数字键盘",
+    "inWorld": "家具（尺寸盒 + 基本形状外观）、美纹纸脚印、四边净距尺带 + 读数牌、门前区、贴墙短条、撞上时真实家具的红色描边",
+    "menus": "更多菜单：外观 · 语言 · 单位 · 全部清除 · 退出",
+    "systemSurfaces": "提示条（顶部一条）、清除确认 / 不可用对话框、首次引导气泡（放下第一件后教一次「按住拖到墙边」）",
+    "deselect": "点地板、点墙、点空处 = 取消选中，不产生别的效果；菜单开着时第一下只关菜单；移动只靠按住拖",
+    "densityCap": "常驻面板 1 块；件条至多 1 块；净距读数牌至多 4 块（只属于选中那件）；提示条至多 1 条"
+  },
+  "panels": [
+    {
+      "id": "library",
+      "name": "家具库面板 Library",
+      "surface": "Stage 附着面板（玻璃根 Material.Regular），懒跟随",
+      "sizeDp": [
+        400,
+        288
+      ],
+      "scale": 0.75,
+      "physicalM": [
+        0.24,
+        0.173
+      ],
+      "placement": "视野左 18°、下 26°、距头 0.6 m，长边水平、后仰 12°；离开视野窗口 0.5 s 后滑回；不进真实表面（同空间尺尺身规则）。不可抓取（附着面板没有外壳可抓）。研发站在模拟器实测低头 45° 时它挡住多少地板，挡住超过视野下半部 15% 就把下沉角加到 30°。",
+      "content": "第 1 行 48 高：撤销 IconButton 56×48 · 弹性空白（件数 ≥ 10 时显示「10/12」labelLarge）· 更多 IconButton 56×48。间隔 8。模板格子 4 列 × 3 行，每格 88×64、间距 8：家具图标 32 dp + 尺寸一行 labelLarge 14/18 · 600 等宽数字（如 210×90）；名字只做无障碍名。第 12 格空。",
+      "states": [
+        "disabled(starting / scanning / blocked)",
+        "normal",
+        "limit(12/12 格子禁用)"
+      ],
+      "notes": "点一个格子 = 立刻把这件放到你面前地板上，没有确认步骤。三人沙发 / 双人沙发 / 单人椅靠尺寸那行区分。"
+    },
+    {
+      "id": "pieceStrip",
+      "name": "件条 Piece Strip",
+      "surface": "Stage 附着面板（TagCard：3 dp 玻璃边 + plateInk 内卡），恒定视角缩放，朝向头部",
+      "sizeDp": {
+        "collapsed": [
+          384,
+          72
+        ],
+        "sizing": [
+          384,
+          312
+        ]
+      },
+      "placement": "家具朝向你的那一侧上方，离地高度 = 顶面 + 12 cm，并夹在「头高 − 0.9 m」到「头高 − 0.2 m」之间；按空间尺钉牌八位规则避让读数牌与家具库",
+      "content": "收起：判定徽标 40 dp 圆底（勾 = 放得下 passable / 警告三角 = 挡门 alert / 叉 = 撞了 error，图标 24 dp，内容色 tapeInk）· 尺寸 Button「160×85×85」titleMedium 等宽数字（弹性宽，约 130 dp）· 转 90° IconButton 56×48 · 删除 IconButton 56×48；间隔 6。内宽 = 384 − 6（玻璃边）− 20（内边距）= 358 dp。展开（改尺寸）：分隔线下左侧三行 W / D / H（168 宽，每行 56 高；轴向小字 + 数值 + 单位，选中行 interaction 底）· 右侧 3×4 数字键盘（1–9、退格、0、确定），每键 56×48、间距 4，共 176 宽。",
+      "states": [
+        "collapsed",
+        "sizing"
+      ],
+      "notes": "没有关闭键：点地板 / 点空处就取消选中。展开态也没有关闭：按确定、或再点尺寸按钮就收起（收起时未确定的输入丢弃）。"
+    },
+    {
+      "id": "gapPlate",
+      "name": "净距读数牌 Gap Plate",
+      "surface": "Stage 附着面板（plateInk 实底 pill，一行），恒定视角",
+      "sizeDp": [
+        128,
+        40
+      ],
+      "placement": "骑在净距尺带中点上方（骑码 + 立杆，同空间尺读数牌）",
+      "content": "一行：数字 + 单位。≥ 80 cm：前置 passable 小圆点「● 92 cm」；5–80 cm：pill 整块 alert 底、tapeInk 字「62 cm」（不带 ▲，▲ 只给挡门）。",
+      "states": [
+        "passable",
+        "tight"
+      ]
+    },
+    {
+      "id": "moreMenu",
+      "name": "更多菜单 More",
+      "surface": "Stage 附着面板（Material.Thick），从更多键向上弹出",
+      "sizeDp": [
+        256,
+        232
+      ],
+      "scale": 0.75,
+      "content": "第 1 行：外观 SegmentControl 两段图标 [实体 | 线框]；第 2 行：语言 SegmentControl [地球 = 跟随系统 | 中文 | EN]；第 3 行：单位 SegmentControl [cm | in]；第 4 行：全部清除 Button（垃圾桶 + 「全部清除」，没有家具时禁用）· 退出 IconButton。外观、语言、单位原地生效，菜单不关。第一下点菜单外任何地方只关菜单（见 rules.menuOpen）。"
+    },
+    {
+      "id": "clearDialog",
+      "name": "清除确认（自建对话框）",
+      "surface": "Stage 附着面板（按 AlertDialog 规格：Thick、内边距 32、圆角 32）",
+      "sizeDp": [
+        400,
+        212
+      ],
+      "placement": "视线正前 0.9 m，出现后留在原地；打开期间其余点击无效",
+      "content": "第 1 行：垃圾桶 32 dp + 家具图标 + n（件数）；一句「清除后无法撤销。」；按钮 [叉 取消]（fillTertiary）[垃圾桶 清除]（error 底 tapeInk 字）"
+    },
+    {
+      "id": "blockedDialog",
+      "name": "不可用（自建对话框）",
+      "surface": "同清除确认",
+      "sizeDp": [
+        400,
+        236
+      ],
+      "content": "无法使用图标 + 标题「空间能力不可用」；一句「请在系统设置中允许平面识别和空间锚点。」；[退出] [重试]（interaction 底）。英文共 12 词：Spatial features unavailable / Allow plane detection and anchors in Settings. / Exit / Retry"
+    },
+    {
+      "id": "snackbar",
+      "name": "提示条（自建）",
+      "surface": "Stage 附着面板（按 Snackbar 规格：Thick、圆角 28），跟头",
+      "sizeDp": {
+        "min": [
+          240,
+          56
+        ],
+        "max": [
+          560,
+          56
+        ]
+      },
+      "scale": 1.125,
+      "placement": "视野中心上方 14°、距头 0.9 m",
+      "content": "图标 24 · 一句 ≤ 6 词（中文 ≤ 12 字）titleMedium · 可选动作 Button（interaction 底）"
+    },
+    {
+      "id": "coachmark",
+      "name": "引导气泡（一步）",
+      "surface": "Stage 附着面板（Thick），挂在家具库右侧",
+      "sizeDp": [
+        360,
+        80
+      ],
+      "scale": 0.75,
+      "content": "图示（手 + 箭头 + 墙）· 「按住拖到墙边」· 勾。放下第一件后出现一次；第一次拖动结束或点勾后永不再出现。",
+      "placement": "家具库右侧"
+    }
+  ],
+  "entities3d": [
+    {
+      "id": "piece",
+      "name": "家具 Piece",
+      "what": "父实体（房间锚点下的局部位姿）：尺寸盒子实体 + 基本形状外观子实体 + 脚印子实体 + 接触影（无光照半透明贴片，不是实时阴影）。尺寸 = 输入的 W×D×H（米）。不加载任何外部模型。",
+      "budget": "≤ 12 件；每件 ≤ 12 个基础几何体盒子，无贴图、无外部模型"
+    },
+    {
+      "id": "pieceBox",
+      "name": "尺寸盒",
+      "what": "12 根边条（8 mm 方截面，pieceEdge 白 + bladeEdge 描边）+ 6 面 pieceFill 白 14%。线框外观时显示；实体外观时只显示底面四条边。选中：边条 interaction 黄。撞了：6 面 error 35% + 边条 error。走进去：整体透明度 25%。"
+    },
+    {
+      "id": "pieceSkin",
+      "name": "基本形状外观",
+      "what": "每个模板由 3–12 个盒子按 W×D×H 比例拼成（配方见 primitiveRecipes），全部用基础几何体 + 两种颜色（布面 fabric / 木面 wood）；改尺寸时按比例重排，不拉伸贴图。自定义 = 一个盒子。",
+      "budget": "每件 ≤ 12 个盒子，12 件 ≤ 144 个盒子；无贴图"
+    },
+    {
+      "id": "footprint",
+      "name": "美纹纸脚印 Tape Footprint",
+      "what": "贴地 2 mm 的蓝色胶带矩形框（maskingBlue，带宽 40 mm，四角重叠一点像手撕胶带），= 家具底面投影。落地时从一角「啪」地沿四边贴出 0.35 s。"
+    },
+    {
+      "id": "gapTape",
+      "name": "净距尺带 Gap Tape",
+      "what": "复用空间尺尺带（黄底黑刻度、零端红、钢钩）：选中家具每个侧面，在侧面全宽范围内扫最近障碍（家具盒对墙薄盒 / 其他家具盒 / 真实家具柱的最小水平距离，高度范围取家具 0–H 与障碍的交集），2 m 以内且净距 ≥ 5 cm 才画；尺带画在取得最小距离的那一处，每面最多一条，共 ≤ 4 条。",
+      "budget": "复用 10 cm 刻度段预建网格；4 条 × ≤ 20 段"
+    },
+    {
+      "id": "contactMark",
+      "name": "贴墙标记",
+      "what": "净距 < 5 cm（已贴上）时，在该侧面贴着的那一边画一条 interaction 黄色 6 mm 短条（长 = 侧面宽 60%），不画尺带。"
+    },
+    {
+      "id": "doorZone",
+      "name": "门前区",
+      "what": "每个 DOOR 平面在室内一侧的地面上，宽 = 门宽、深 0.8 m（从门洞底边投影到地板起算，DOOR quad 不到地也照此投影）。室内侧 = FLOOR 中心（没有时用头部位置）所在的一侧，不用 quad 法线（墙 quad 法线朝外）。平时不显示，有家具脚印伸进去时显示 alert 25% 地面贴片 + 虚线边。"
+    },
+    {
+      "id": "obstacles",
+      "name": "障碍几何（不可见）",
+      "what": "三类障碍几何，只做几何测试，不加物理碰撞体：① 墙 / 门 / 窗与所有竖直语义平面：PlaneAnchor 顶点 + transform 自建 4 cm 薄盒，向室外一侧加厚（室内侧 = FLOOR 中心所在一侧）。② 真实家具体（主来源）：空间网格里语义属于 SOFA / CHAIR / TABLE / BED / CABINET / REFRIGERATOR / WASHING_MACHINE / PLANT / LAMP / COLUMN / SCREEN 的顶点，按语义 + 空间邻近（间距 ≤ 15 cm）聚成簇，每簇取地面投影的最小外接矩形（OBB）作为占地、最高顶点作为高度，成一个直立棱柱；占地 < 10×10 cm 或高度 < 10 cm 的簇丢弃（噪声）。③ 兜底：没有网格数据时，水平语义平面（TABLE / CABINET / BED 等）向下拉伸到地板成柱。FLOOR / CEILING / WALL_ART / HUMAN 不算障碍。研发站在模拟器先截一张「所有障碍几何」调试图，确认 S8 不误报。"
+    },
+    {
+      "id": "floorHit",
+      "name": "地板 / 兜底命中层",
+      "what": "FLOOR 薄盒 + 包住房间的兜底碰撞体，都带 InteractableComponent：点中它们 = 取消选中 / 关菜单（同空间尺假设 1 的「点空了」）。地板高度取 FLOOR 平面，按无限水平面算，不受四边形边界限制。"
+    },
+    {
+      "id": "realFurnitureMark",
+      "name": "真实家具描边",
+      "what": "平时不显示。虚拟家具撞上某个真实家具体时，把那个体的占地矩形在地面上描一圈 error 色虚线（2 cm 宽），让人知道撞的是哪一件；分开后 0.5 s 淡出。"
+    }
+  ],
+  "templates": [
+    {
+      "id": "sofa3",
+      "zh": "三人沙发",
+      "en": "3-seat sofa",
+      "dimsCm": [
+        210,
+        90,
+        85
+      ],
+      "shape": "sofa"
+    },
+    {
+      "id": "sofa2",
+      "zh": "双人沙发",
+      "en": "Loveseat",
+      "dimsCm": [
+        160,
+        85,
+        85
+      ],
+      "shape": "sofa"
+    },
+    {
+      "id": "armchair",
+      "zh": "单人椅",
+      "en": "Armchair",
+      "dimsCm": [
+        80,
+        80,
+        85
+      ],
+      "shape": "sofa"
+    },
+    {
+      "id": "bedDouble",
+      "zh": "双人床",
+      "en": "Double bed",
+      "dimsCm": [
+        150,
+        200,
+        90
+      ],
+      "shape": "bed"
+    },
+    {
+      "id": "bedSingle",
+      "zh": "单人床",
+      "en": "Single bed",
+      "dimsCm": [
+        90,
+        200,
+        90
+      ],
+      "shape": "bed"
+    },
+    {
+      "id": "dining",
+      "zh": "餐桌",
+      "en": "Dining table",
+      "dimsCm": [
+        140,
+        80,
+        75
+      ],
+      "shape": "table"
+    },
+    {
+      "id": "desk",
+      "zh": "书桌",
+      "en": "Desk",
+      "dimsCm": [
+        120,
+        60,
+        75
+      ],
+      "shape": "desk"
+    },
+    {
+      "id": "bookcase",
+      "zh": "书柜",
+      "en": "Bookcase",
+      "dimsCm": [
+        80,
+        30,
+        180
+      ],
+      "shape": "bookcase"
+    },
+    {
+      "id": "wardrobe",
+      "zh": "衣柜",
+      "en": "Wardrobe",
+      "dimsCm": [
+        120,
+        60,
+        200
+      ],
+      "shape": "wardrobe"
+    },
+    {
+      "id": "tvStand",
+      "zh": "电视柜",
+      "en": "TV stand",
+      "dimsCm": [
+        180,
+        40,
+        50
+      ],
+      "shape": "tvStand"
+    },
+    {
+      "id": "custom",
+      "zh": "自定义",
+      "en": "Custom",
+      "dimsCm": [
+        100,
+        50,
+        50
+      ],
+      "notes": "放下后自动展开改尺寸",
+      "shape": "box"
+    }
+  ],
+  "rules": {
+    "place": "点模板格子 → 落点 = 头部地面投影沿视线水平方向前方 1.4 m；若前方最近的墙比这更近，落点夹到「墙前 + 半个进深 + 5 cm」。正面朝你，朝向取最近的房间轴向；从 20 cm 高处 0.3 s 落地，自动选中；若落点已撞，照样放下（变红），由用户拖开。地板还没报上来时格子禁用。",
+    "roomAxes": "房间轴向 = 面积最大的 WALL 平面的法线及其垂直方向；第一件家具放下前持续更新，之后固定（保存进方案）。",
+    "move": "只有按住拖：按下时记住抓点（在家具盒上，离地 0.3–2 m）的高度；指向线（系统指点路径用空间尺的按下点等效深度换算；有射线时直接用射线）与「过抓点的水平面」求交，家具按抓点到脚印中心的偏移平移，沿地板滑。点地板 / 点空处不移动家具，只取消选中。",
+    "snap": "移动中与松开时，任一侧面与任一竖直薄盒（墙 / 门窗 / 竖直语义面，含真实柜子侧面）的室内侧面、或另一件家具侧面的有向距离在 [−5 cm, +5 cm] 内 → 推到贴面（净距 0），穿进 5 cm 以内也推回；轻抖 + 「嗒」。家具贴家具要求两侧面在水平方向投影重叠 ≥ 10 cm。只在平行时吸（朝向取房间轴向；薄盒与轴向偏差 > 5° 不吸）。",
+    "rotate": "转 90°：绕脚印中心顺时针 90°；转完若穿墙，沿该墙室内法线推出去（最多推 1 次进深）；推出后仍相交才显示撞了。",
+    "collide": "家具盒与墙 / 门窗薄盒、竖直语义面薄盒、真实家具体（空间网格聚类；无网格时用平面柱兜底）、另一件家具盒相交深度 > 1 cm → 撞了（虚拟家具双方都红；真实家具在地上描一圈红虚线）。脚印中心离开「所有 FLOOR 四边形的并集外扩 20 cm」也算撞了；平面与网格更新即重算。",
+    "door": "家具脚印与任一门前区相交 → ▲ 挡门（不红；橙色门前区显示）。",
+    "gap": "选中（或拖动中）的那件四个侧面各扫一遍全宽最小净距（见 gapTape）：< 5 cm → 贴墙短条；5–80 cm → alert 读数牌（人过不去，不带 ▲）；80–200 cm → 绿点读数牌；> 200 cm 不画。 障碍包括真实家具体，所以「沙发到真实茶几之间人过不过得去」同样读出来。",
+    "verdict": "撞了 > 挡门 > 放得下；只看这一件。图标：叉 / 警告三角 / 勾。",
+    "inside": "头部的地面投影落在某件家具脚印外扩 15 cm 内 → 这件家具整体透明度 25%（不影响判定）。",
+    "limit": "最多 12 件；满了格子禁用；点禁用格子出提示条「最多 12 件」。",
+    "units": "cm（默认）/ in。in 模式下尺寸输入与读数都是整英寸；内部一律米。",
+    "precisionNote": "读数取整到 1 cm（in 取整到 1 in），不显示 ±：家具试摆的误差主要来自平面识别（1–2 cm），读数够用。",
+    "noFloor": "FLOOR 还没报上来（含找回时）：家具照常按锚点显示，但格子禁用、拖动禁用，提示条「慢慢看看地面」。没有 FLOOR 时是否先用 Stage 地面高度兜底：需核实，本版不做。",
+    "sizing": "数字键盘输入只改数值格，按确定才写入家具（避免输入 160 时家具先变 1 cm、16 cm 抖动）；范围 10–400 cm（4–160 in），超出范围时确定键禁用、数值格变 error 色。写入后若穿墙，走转 90° 的同一条推出规则，再吸附一次。",
+    "menuOpen": "更多菜单开着时，第一下点菜单外任何地方只关菜单，不取消选中、不放家具、不选家具。",
+    "restoreTimeout": "有保存的摆法时，启动后 10 s 内没找到房间锚点 → S16，后台继续找，找到即转 S15；S16 里格子禁用，直到用户点清除（清除才删旧锚点），不会被新家具悄悄覆盖。",
+    "scan": "启动即开始平面检测与空间网格。地板（FLOOR 平面）一出来格子就放开；墙、门、真实家具随看随认，认出来前它们不参与碰撞与净距（提示条在第一件放下前提示「慢慢看一圈房间」）。"
+  },
+  "states": [
+    {
+      "id": "S1",
+      "name": "准备中 starting",
+      "reach": "启动应用",
+      "qaCapture": "家具库面板先出现，格子区域只有转圈、格子与更多键禁用；没有提示条",
+      "exits": [
+        "资源就绪 → S2 / S15 / S20",
+        "有保存的摆法但 10 s 内没找到房间锚点 → S16"
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "扫描房间 scanning",
+      "reach": "启动后还没有 FLOOR 平面（模拟器约 20–45 s）；平面检测与空间网格同时在跑",
+      "qaCapture": "格子禁用（半透明）；提示条「慢慢看一圈房间」+ 转圈",
+      "exits": [
+        "FLOOR 上报 → S3（或已有家具 → S4）"
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "空房间 empty",
+      "reach": "有地面、没有家具；墙与真实家具在后台继续识别",
+      "qaCapture": "格子全部可点；第 1 行只有撤销（禁用）和更多；不显示件数",
+      "exits": [
+        "点格子 → S21 / S5"
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "已摆放 placed",
+      "reach": "有家具、没选中（点地板 / 点空处后）",
+      "qaCapture": "地上蓝色美纹纸脚印 + 家具外观；没有件条、没有卷尺",
+      "exits": [
+        "点家具 → S5",
+        "按住家具拖 → S6"
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "选中 selected",
+      "reach": "刚放下的那件自动选中；或点一件家具",
+      "qaCapture": "盒边条变黄；件条在家具朝你一侧上方：勾 + 「210×90×85」+ 转 90° + 删除；四边（≤ 4 条）净距尺带 + 读数牌，≥ 80 cm 绿点、5–80 cm 橙底",
+      "exits": [
+        "按住拖 → S6",
+        "点尺寸 → S10",
+        "点地板 / 空处 / 删除 → S4"
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "拖动中 dragging",
+      "reach": "在家具上按住拖动",
+      "qaCapture": "家具沿地板跟手，脚印跟着走；净距尺带与读数实时变化；件条隐藏",
+      "exits": [
+        "松开 → S5 / S7 / S8 / S9"
+      ]
+    },
+    {
+      "id": "S7",
+      "name": "贴墙 snapped",
+      "reach": "拖到离墙 ±5 cm 内松开",
+      "qaCapture": "贴墙那一侧没有尺带，改为一条黄色贴墙短条；其余侧仍有尺带；判定勾",
+      "exits": [
+        "拖离 → S6"
+      ]
+    },
+    {
+      "id": "S8",
+      "name": "撞了 colliding",
+      "reach": "家具穿进墙 / 另一件家具 / 空间网格认出的真实家具（沙发、床、柜子、桌子…），或脚印中心出了房间",
+      "qaCapture": "家具六面红 35% + 红边条，件条判定叉；撞的是虚拟家具则对方也红；撞的是真实家具则它的占地在地上描一圈红虚线",
+      "exits": [
+        "拖开 → S5"
+      ]
+    },
+    {
+      "id": "S9",
+      "name": "挡门 door-blocked",
+      "reach": "家具脚印伸进门前 0.8 m 区域（模拟器房间有 DOOR 平面）",
+      "qaCapture": "门前地面显出橙色贴片 + 虚线边；件条判定警告三角",
+      "exits": [
+        "拖开 → S5"
+      ]
+    },
+    {
+      "id": "S10",
+      "name": "改尺寸 sizing",
+      "reach": "件条点尺寸；或放下「自定义」",
+      "qaCapture": "件条展开到 384×312：W / D / H 三行（当前行黄底）+ 3×4 数字键盘；输入只改数值格，按确定后家具变大变小；超范围时确定键禁用",
+      "exits": [
+        "确定 / 再点尺寸 → S5"
+      ]
+    },
+    {
+      "id": "S11",
+      "name": "走进家具 inside",
+      "reach": "人（头部地面投影）走进某件家具的脚印外扩 15 cm",
+      "qaCapture": "那件家具整体变半透明（25%），脚印仍实",
+      "exits": [
+        "走出 → 前态"
+      ]
+    },
+    {
+      "id": "S12",
+      "name": "线框外观 wireframe",
+      "reach": "更多 → 外观切到线框",
+      "qaCapture": "所有家具只剩白色边条 + 14% 白面，看得见后面的真实房间；脚印不变",
+      "exits": [
+        "切回实体"
+      ]
+    },
+    {
+      "id": "S13",
+      "name": "更多 more-menu",
+      "reach": "家具库点更多",
+      "qaCapture": "菜单向上弹出：外观两段、语言三段、单位两段、全部清除、退出",
+      "exits": [
+        "第一下点菜单外任何地方 → 只关菜单（不取消选中、不放家具、不选家具）",
+        "全部清除 → S14",
+        "退出 → 系统桌面"
+      ]
+    },
+    {
+      "id": "S14",
+      "name": "确认清除 confirm-clear",
+      "reach": "更多 → 全部清除",
+      "qaCapture": "视线正前对话框：垃圾桶 + 家具图标 n、「清除后无法撤销。」、取消 / 清除（红）",
+      "exits": [
+        "清除 → S3（并删除房间锚点）",
+        "取消 → 前态"
+      ]
+    },
+    {
+      "id": "S15",
+      "name": "找回 restoring",
+      "reach": "有保存的摆法时重开应用，房间锚点找到",
+      "qaCapture": "家具在原位从地板升起 0.6 s；提示条「已找回 n 件」",
+      "exits": [
+        "约 1 s → S4（地板未到时按 noFloor 规则：拖动禁用）"
+      ]
+    },
+    {
+      "id": "S16",
+      "name": "不在此房间 elsewhere",
+      "reach": "有保存的摆法，重开后 10 s 内没找到房间锚点（换了房间 / 定位库被清 / 重定位慢）；后台继续找",
+      "qaCapture": "不显示任何家具；格子禁用；提示条「上次的摆法不在这里」+ [清除]",
+      "exits": [
+        "后台找到 → S15",
+        "清除（删除旧房间锚点与摆法）→ S3"
+      ]
+    },
+    {
+      "id": "S17",
+      "name": "未保存 unsaved",
+      "reach": "房间锚点创建失败",
+      "qaCapture": "所有脚印变白色虚线；提示条「没能保存」+ [重试]；本次照常可摆",
+      "exits": [
+        "重试成功 → 前态"
+      ]
+    },
+    {
+      "id": "S18",
+      "name": "满了 limit",
+      "reach": "第 12 件放下后",
+      "qaCapture": "格子全部禁用、第 1 行显示「12/12」；点禁用格子出提示条「最多 12 件」",
+      "exits": [
+        "删除一件 → 前态"
+      ]
+    },
+    {
+      "id": "S19",
+      "name": "定位丢失 tracking-lost",
+      "reach": "空间定位丢失",
+      "qaCapture": "家具去色（staleGrey）、净距尺带隐藏、拖动禁用；提示条常驻「定位丢失 · 环顾四周」",
+      "exits": [
+        "恢复 → 前态"
+      ]
+    },
+    {
+      "id": "S20",
+      "name": "不可用 blocked",
+      "reach": "启动时不在 Full Space / 缺能力 / 缺权限",
+      "qaCapture": "视线正前不可用对话框；家具库禁用",
+      "exits": [
+        "重试 → S1",
+        "退出"
+      ]
+    },
+    {
+      "id": "S21",
+      "name": "保存中 saving",
+      "reach": "放下第一件时创建房间锚点（0.3–1.0 s）",
+      "qaCapture": "第一件的脚印是黄色虚线并缓慢转动（同空间尺「钉牢中」），之后变实心蓝",
+      "exits": [
+        "成功 → S5（首次同时显示 S22）",
+        "失败 → S17"
+      ]
+    },
+    {
+      "id": "S22",
+      "name": "首次引导 coach",
+      "reach": "首次放下第一件后（不管 S21 保存成功还是 S17 失败）",
+      "qaCapture": "家具库右侧引导气泡：手 + 箭头 + 墙图示、「按住拖到墙边」+ 勾",
+      "exits": [
+        "第一次拖动结束或点勾 → S5"
+      ]
+    }
+  ],
+  "qaHooks": "研发站提供调试广播（应用自定义，不是 SDK API；同 Perch / 空间尺做法）：`am broadcast -a io.embodit.furniturefit.DEBUG --es cmd <place|select|drag|state> …`，让 QA 能按状态名直达 S8 / S9 / S11 / S15–S21；另提供 `--es cmd obstacles` 切换「所有障碍几何」调试显示。截图沿用 emu 控制台连拍两次。 另加 `--es cmd coach_reset`（重置首次引导，QA 不用重装就能截 S22）与 `--es cmd restore_timeout`（立刻进 S16）。",
+  "interactions": [
+    {
+      "id": "T1",
+      "name": "放一件",
+      "trigger": "点模板格子",
+      "result": "家具落在面前 1.4 m 地板上并选中",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T2",
+      "name": "选中 / 取消",
+      "trigger": "点家具 = 选中；点地板 / 墙 / 空处 = 取消选中（并关菜单）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T3",
+      "name": "拖动",
+      "trigger": "在家具上按住拖动",
+      "result": "按抓点高度的水平面平移，沿地板滑，净距实时",
+      "verify": "模拟器可验证（系统拖动送达已在空间尺验证；手感真机依赖）"
+    },
+    {
+      "id": "T5",
+      "name": "贴墙吸附",
+      "trigger": "侧面与墙 / 家具有向距离在 ±5 cm 内（家具间投影重叠 ≥ 10 cm）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T6",
+      "name": "转 90°",
+      "trigger": "件条 ic_rotate90（转完穿墙沿墙推出）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T7",
+      "name": "改尺寸",
+      "trigger": "件条「尺寸」→ 数字键盘 → 确定（只有确定才写入）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T8",
+      "name": "删除",
+      "trigger": "件条 ic_trash（可撤销）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T9",
+      "name": "撤销",
+      "trigger": "家具库 ic_undo（最多 20 步：放、移、转、改尺寸、删）",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T10",
+      "name": "撞墙 / 撞家具变红",
+      "trigger": "自动",
+      "verify": "模拟器可验证（墙、另一件虚拟家具、模拟器房间的 TABLE / CABINET 平面）；真机覆盖度真机依赖"
+    },
+    {
+      "id": "T11",
+      "name": "挡门",
+      "trigger": "自动",
+      "verify": "模拟器可验证（模拟器房间有 1 个 DOOR 平面）"
+    },
+    {
+      "id": "T12",
+      "name": "走进家具变透明",
+      "trigger": "自动",
+      "verify": "模拟器部分可验证（相机移动注入 / 调试广播）；真实走动真机依赖"
+    },
+    {
+      "id": "T13",
+      "name": "切外观",
+      "trigger": "更多 → 外观分段",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T14",
+      "name": "语言 / 单位",
+      "trigger": "更多菜单",
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T15",
+      "name": "全部清除",
+      "trigger": "更多 → 全部清除 → 确认",
+      "confirm": true,
+      "verify": "模拟器可验证"
+    },
+    {
+      "id": "T16",
+      "name": "自动保存 / 找回",
+      "trigger": "每次改动后 0.5 s 自动存（房间锚点 + 每件局部位姿）；重开找回，10 s 找不到转 S16",
+      "verify": "模拟器可验证（锚点跨 force-stop 持久化、重定位整体刚性已在空间尺验证）"
+    },
+    {
+      "id": "T17",
+      "name": "手柄射线 / 手部捏合",
+      "trigger": "有手柄 / 手部射线时，用射线代替系统指点的等效深度换算，同样与过抓点的水平面求交（同 rules.move）",
+      "verify": "真机依赖"
+    },
+    {
+      "id": "T18",
+      "name": "识别真实家具",
+      "trigger": "自动：空间网格按语义聚类成真实家具体，参与碰撞与净距",
+      "verify": "模拟器可验证（模拟器支持空间网格，PICO 模拟器 UI 调试有 Spatial Mesh 开关；语义种类以模拟器房间实际上报为准）；真机识别覆盖度真机依赖"
+    }
+  ],
+  "palette": {
+    "theme": "SpatialUI vibrant + 根面 Material.Regular 玻璃（同空间尺）",
+    "colorScheme": {
+      "fillPrimary": "inherit",
+      "fillSecondary": "inherit",
+      "fillTertiary": "inherit",
+      "fillLight": "inherit",
+      "labelPrimary": "inherit（玻璃上的所有文字只用它）",
+      "labelPrimaryLight": "#FFFFFF（plateInk 深底上的文字）",
+      "labelSecondary": "inherit（不直接使用）",
+      "labelTertiary": "inherit（不直接使用）",
+      "labelQuaternary": "inherit（禁用）",
+      "lightenHover": "inherit",
+      "lightenPressed": "inherit",
+      "error": "#FF5F52",
+      "alert": "#FF8A1F",
+      "passable": "#66E08A",
+      "interaction": "#FFC72C",
+      "dividerLine": "inherit"
+    },
+    "brandTokens": {
+      "maskingBlue": "#3D8BFF（美纹纸脚印）",
+      "maskingBlueEdge": "#1F5FCC",
+      "tapeYellow": "#FFC72C",
+      "tapeInk": "#16181C",
+      "bladeEdge": "#0E0F12",
+      "meterRed": "#E23B2E",
+      "pieceEdge": "#FFFFFF 90%",
+      "pieceFill": "#FFFFFF 14%",
+      "plateInk": "#121417 94%",
+      "onInkFill": "#FFFFFF 14%",
+      "onInkSecondary": "#FFFFFF 66%",
+      "staleGrey": "#9A9A96"
+    },
+    "rule": "语义色作底时内容色一律 tapeInk；玻璃上文字只用 labelPrimary；深底上只用 labelPrimaryLight / onInkSecondary（空间尺实测对比度规则）",
+    "semantic": [
+      {
+        "status": "放得下",
+        "color": "passable",
+        "cue": "勾",
+        "copy": "放得下 / Fits"
+      },
+      {
+        "status": "挡门",
+        "color": "alert",
+        "cue": "警告三角 + 门前橙色贴片（三角只用于此）",
+        "copy": "挡门 / Blocks door"
+      },
+      {
+        "status": "撞了",
+        "color": "error",
+        "cue": "叉 + 红面",
+        "copy": "撞了 / Collides"
+      },
+      {
+        "status": "人过得去",
+        "color": "passable",
+        "cue": "圆点",
+        "copy": "≥ 80 cm"
+      },
+      {
+        "status": "人过不去",
+        "color": "alert",
+        "cue": "橙底读数牌（无三角）",
+        "copy": "5–80 cm"
+      },
+      {
+        "status": "选中",
+        "color": "interaction",
+        "cue": "黄边条",
+        "copy": "—"
+      },
+      {
+        "status": "保存中",
+        "color": "tapeYellow",
+        "cue": "黄色虚线脚印缓慢转动",
+        "copy": "—"
+      },
+      {
+        "status": "未保存",
+        "color": "labelPrimaryLight",
+        "cue": "白色虚线脚印",
+        "copy": "没能保存 / Not saved"
+      },
+      {
+        "status": "定位丢失",
+        "color": "staleGrey",
+        "cue": "去色 + 无法使用图标",
+        "copy": "定位丢失 / Tracking lost"
+      }
+    ]
+  },
+  "typography": {
+    "font": "Noto Sans + Noto Sans CJK SC（随包，OFL）",
+    "roles": {
+      "titleMedium": "16/20 · 600 · 等宽数字：件条尺寸、提示条主文、数字键",
+      "headlineSmall": "改尺寸行的数值 24/30 · 600 · 等宽",
+      "labelLarge": "14/18 · 600 · 等宽：格子尺寸、件数、读数牌数字",
+      "bodyLargeMultiline": "16/24 · 500：对话框正文、引导气泡",
+      "headlineLarge": "24/30：对话框标题"
+    },
+    "rule": "中文 ≤ 17 sp 不用 Bold；数字一律等宽；不用 14 sp 以下的字（空间尺实测 0.75 缩放下 12 sp 太细）"
+  },
+  "spatialUiMap": {
+    "appearance": "SegmentControl（两段图标，在更多菜单里）",
+    "templateTile": "Button（fillTertiary 底，内容自定义为竖排：Icon 32 + Text labelLarge）",
+    "pieceCount": "Text labelLarge（≥ 10 件时才显示）",
+    "verdictBadge": "Icon 在 40 dp 圆底（圆底自定义，内容是 Icon）",
+    "dimsButton": "Button（fillPrimary 底，等宽数字）",
+    "dimsRows": "ToggleButton ×3（单选，选中 interaction 底）",
+    "keypad": "Button ×12（56×48）；确定键在超范围时 disabled",
+    "menuLanguage/Unit": "SegmentControl",
+    "clearAll": "Button（垃圾桶 + 文字）",
+    "exit": "IconButton",
+    "dialogs": "自建附着面板 + Text + Button（Stage 不用 AlertDialog）",
+    "snackbar": "自建附着面板 + Icon + Text + Button（Stage 不用 SnackbarHost）",
+    "coachmark": "自建附着面板 + Icon + Text + IconButton（SimpleCoachmark 在 Stage 未验证）",
+    "spinner": "CircularProgressIndicator",
+    "gapPlate": "自定义 pill（内部 Text）：骑在 3D 尺带上的领域读数，SpatialUI 没有对应组件",
+    "forbidden": "不得出现 Material / Material3 任何组件或 MaterialTheme",
+    "libraryUndo/More/stripRotate/Delete": "IconButton 56×48",
+    "needsCheck": "LocalDisableAlpha（禁用透明度的 CompositionLocal 名字）需核实；不行就直接给禁用态 alpha 0.38"
+  },
+  "copy": {
+    "snackbar": [
+      {
+        "kind": "scanning",
+        "zh": "慢慢看看地面",
+        "en": "Look at the floor"
+      },
+      {
+        "kind": "restored",
+        "zh": "已找回 {n} 件",
+        "en": "{n} pieces restored"
+      },
+      {
+        "kind": "elsewhere",
+        "zh": "上次的摆法不在这里",
+        "en": "Last layout isn't here",
+        "action": {
+          "zh": "清除",
+          "en": "Clear"
+        }
+      },
+      {
+        "kind": "unsaved",
+        "zh": "没能保存",
+        "en": "Not saved",
+        "action": {
+          "zh": "重试",
+          "en": "Retry"
+        }
+      },
+      {
+        "kind": "limit",
+        "zh": "最多 12 件",
+        "en": "Max 12 pieces"
+      },
+      {
+        "kind": "lost",
+        "zh": "定位丢失 · 环顾四周",
+        "en": "Tracking lost · look around"
+      },
+      {
+        "kind": "cleared",
+        "zh": "已全部清除",
+        "en": "All cleared"
+      }
+    ],
+    "coachmark": {
+      "zh": "按住拖到墙边",
+      "en": "Hold and drag to a wall"
+    },
+    "clearDialog": {
+      "zh": "清除后无法撤销。 / 取消 / 清除",
+      "en": "This can't be undone. / Cancel / Clear"
+    },
+    "blockedDialog": {
+      "zh": "空间能力不可用 / 请在系统设置中允许平面识别和空间锚点。/ 退出 / 重试",
+      "en": "Spatial features unavailable / Allow plane detection and anchors in Settings. / Exit / Retry"
+    },
+    "verdict": {
+      "fits": [
+        "放得下",
+        "Fits"
+      ],
+      "door": [
+        "挡门",
+        "Blocks door"
+      ],
+      "collide": [
+        "撞了",
+        "Collides"
+      ]
+    },
+    "contentDescriptions": "所有图标键与格子都有中英无障碍名：撤销 Undo / 更多 More / 转 90° Rotate 90° / 删除 Remove / 尺寸 Size / 宽 W / 深 D / 高 H / 外观 Look / 实体 Solid / 线框 Wireframe / 10 个家具名（见 templates）"
+  },
+  "persistence": {
+    "what": "一个房间锚点（放下第一件时在它脚印中心的地板上创建）+ 每件家具相对房间锚点的局部位姿（x、z、朝向 0/90/180/270）+ 模板 id + W×D×H（米）；房间轴向随房间锚点保存；外观、单位、语言、引导已看过另存偏好。",
+    "why": "空间尺已验证锚点重定位是整体刚性变换（假设 16）；房间 ≤ 5 m 在真机检索半径内。一个锚点就不用每次移动重建、不用每件增删锚点，撤销也只是改局部位姿。",
+    "when": "每次改动后 0.5 s 自动保存局部位姿（不碰锚点）；房间锚点只在第一件时创建（S21 保存中），全部清除时删除。",
+    "risk": "离房间锚点 4–5 m 的家具在真机上可能有厘米级漂移：真机依赖，若明显则改为每件一个锚点。",
+    "offline": "全部本机保存，不联网，不需要账号或 API key；中国区可用。"
+  },
+  "tags": {
+    "contentType": "应用",
+    "category": "MR 空间感知",
+    "contentTags": [
+      "家居",
+      "量房摆位",
+      "搬家",
+      "生产力"
+    ],
+    "featureTags": [
+      "透视 MR",
+      "Full Space",
+      "平面识别",
+      "空间网格语义",
+      "世界锚点",
+      "贴墙吸附",
+      "碰撞检测",
+      "净距读数",
+      "离线",
+      "中英双语"
+    ]
+  },
+  "i18n": "中文 / English，应用内切换（默认跟随系统）；单位 cm / in（默认 cm；系统地区 en-US 时默认 in）。",
+  "apiKeys": "无",
+  "verification": {
+    "emulatorCanVerify": [
+      "S1–S10、S12–S18、S20–S22；S11 / S19 用相机移动注入或调试广播",
+      "放置、拖动、点空处取消选中、贴墙、转 90° 推出、改尺寸、删除、撤销、撞墙 / 撞家具 / 撞模拟器房间里的 TABLE 与 CABINET、挡门、出房间判撞、外观、语言单位、清除、自动保存与找回、空间网格真实家具碰撞（视模拟器上报语义）"
+    ],
+    "deviceOnly": [
+      "手柄射线 / 手部捏合拖动手感",
+      "真实家具识别覆盖度（矮家具、被遮挡家具）与聚类误报率",
+      "贴墙精度与远处家具漂移",
+      "人真实走进家具（S11）",
+      "权限"
+    ]
+  },
+  "estimate": "1.5–2 天：复用空间尺骨架（平面、锚点、尺带、面板池、对话框），新写家具实体与基本形状配方 / 脚印 / 空间网格聚类 / 碰撞与净距 System / 家具库与件条",
+  "reviewNotes": [
+    "2026-10-20 评审第 1 轮（reviewer 子 agent，对照 IKEA Place / Meta Layout / 空间尺设计文档与 simplify-spec）15 条，处理如下：",
+    "R1-1 [P1] 选中时点地板移动违背傻瓜式 → 删 T4；点地板 / 墙 / 空处 = 取消选中并关菜单；移动只靠拖；件条去掉关闭键；加兜底碰撞体",
+    "R1-2 [P2] 家具库太重、挡地板 → 外观挪进更多，件数 ≥ 10 才显示，第 1 行只剩撤销和更多；面板缩到 400×288 dp，下沉 26°，研发站实测低头 45° 遮挡",
+    "R1-3 [P2] 格子字太小 → 每格只放图标 + 尺寸（labelLarge 14 等宽），名字只做无障碍名",
+    "R1-4 [P2] 字形符号会显示方块、文案超上限 → 加 iconSet（全矢量），引导改「按住拖到墙边」，不可用对话框英文缩到 13 词",
+    "R1-5 [P2] 拖动换算平面错 → 指向线与过抓点的水平面求交，按偏移平移；地板按 FLOOR 高度无限平面",
+    "R1-6 [P2] 家具可能落到墙后 / 滑出房间仍判放得下 → 落点夹到墙前；脚印中心出 FLOOR 外扩 20 cm 判撞了",
+    "R1-7 [P2] 地板晚到与找回的先后 → 加 noFloor 规则：没地板时家具照显、格子和拖动禁用；Stage 地面兜底标需核实",
+    "R1-8 [P2] 吸附 / 转向边界 → 吸附窗口 [−5, +5] cm；家具间投影重叠 ≥ 10 cm 才吸；转 90° 后沿墙法线推出",
+    "R1-9 [P2] 净距单射线漏检、▲ 一符两义 → 侧面全宽扫最小距离；5–80 cm 只用橙底不带三角，三角只给挡门",
+    "R1-10 [P2] 真实家具柱规则与验证标注 → 只有水平语义面拉柱、竖直语义面当墙；T10 改为模拟器可验证；S11 写进 emulatorCanVerify；加障碍几何调试显示",
+    "R1-11 [P2] 门前区 / 墙加厚方向 → 室内侧用 FLOOR 中心（或头部）判定，不用 quad 法线；门前区从门洞底边投影",
+    "R1-12 [P2] 改尺寸实时抖动、无上下限、关闭含义不一 → 只有确定才写入；10–400 cm（4–160 in），超范围确定禁用；展开态无关闭",
+    "R1-13 [P2] 件条高度与宽度 → 高度夹在头高 −0.9 到 −0.2 m，放在朝你一侧；宽度重算为 384 dp（内宽 358）",
+    "R1-14 [P2] 持久化缺保存中状态与清理规则 → 改为一个房间锚点 + 每件局部位姿；加 S21 保存中；S16 改为整个房间锚点没找到",
+    "R1-15 [P3] 需核实项 → 加 needsCheck[]；接触影写明是无光照贴片；家具库不可抓取；引导改教拖到墙边（加 S22）",
+    "2026-10-20 评审第 2 轮（最后一轮）8 条：R1 14 条到位，R1-4 未改完；新问题处理如下：",
+    "R2-1 [P1] 样稿未同步 → 样稿已按本版 JSON 重画（家具库第 1 行只有撤销 / 更多、格子图标 + 尺寸、件条无关闭、读数牌无三角、外观在更多、字体表、S1–S22 全部可跳）；iconSet.note 改为冲突以 JSON 为准",
+    "R2-2 [P2] S16 进出未定义 → S1 加出口「10 s 没找到房间锚点 → S16」，后台继续找、找到转 S15；S16 格子禁用直到清除（rules.restoreTimeout）",
+    "R2-3 [P2] 出房间只按一个 FLOOR 判 → 改为所有 FLOOR 并集外扩 20 cm，平面更新即重算",
+    "R2-4 [P3] 不可用对话框超 13 词、交互清单有字形 → 正文改「Allow plane detection and anchors in Settings.」（共 12 词）；T6 / T8 / T9 改写为图标名",
+    "R2-5 [P3] T17 与 rules.move 矛盾 → T17 改为射线同样与过抓点的水平面求交",
+    "R2-6 [P3] 菜单外点击写法不一 → 统一为第一下只关菜单（rules.menuOpen），S13 出口同步",
+    "R2-7 [P3] 改尺寸后穿墙、吸附只认墙 → 确定后走推出规则；吸附对象改为所有竖直薄盒（含柜子侧面）",
+    "R2-8 [P3] 引导依赖保存成功、QA 无法重置 → S22 在放下第一件后就出现；qaHooks 加 coach_reset / restore_timeout",
+    "评审结束（2 轮上限）。reviewer 结论：改完即可进实现，无未决项。",
+    "2026-10-20 门 B 改 1：见 changes[] C1 / C2；无需重开评审（改动不涉及流程与面板结构）"
+  ],
+  "changes": [
+    "2026-10-20 门 B 第 1 次「改」（用户在面板按 [改…]，意见见样稿评论两条）：",
+    "C1 线程 21947fc3「用 Spatial SDK 的 MR 能力（平面检测、scene capture），Full Space，没有 Shared Space」→ 容器保持 STAGE_MIXED 并写明无 Shared Space、无降级；所有面板本来就是 Stage 内附着面板，写进 container.notes；查 pico-dev-knowledge 与 SDK 6.1 文档：没有 scene capture 公开 API，改用 空间网格（MeshTrackingManager，逐顶点语义含 SOFA / BED / TABLE / CABINET…）聚类出真实家具体做碰撞与净距，平面检测负责地板 / 墙 / 门窗；加 container.mrCapabilities、rules.scan、realFurnitureMark、T18；S2 改名「扫描房间」；S8 加真实家具描边",
+    "C2 线程 9a11c25b「用基本形状来表示也可以」→ 去掉 Kenney 依赖，外观改为基础几何体拼成（primitiveRecipes）；床默认高改为床头板 90 cm；chip 改为「交互参考 IKEA Place · Meta Layout（不含其商品数据）」"
+  ],
+  "iconSet": {
+    "rule": "全部是矢量图标（VectorDrawable / ImageVector pathData，研发站按 simplify-spec §K 的做法出 pathData）；不用任何 emoji / 字形符号（Noto Sans 不带 emoji 会显示成方块）",
+    "ui": [
+      "ic_undo 撤销",
+      "ic_more 更多",
+      "ic_rotate90 转 90°",
+      "ic_trash 删除 / 清除",
+      "ic_look_solid 实体",
+      "ic_look_wire 线框",
+      "ic_globe 跟随系统",
+      "ic_exit 退出",
+      "ic_retry 重试",
+      "ic_check 勾 / 确定",
+      "ic_close 叉 / 取消",
+      "ic_hit 撞了（粗叉）",
+      "ic_warning 警告三角（挡门 / 提示）",
+      "ic_unavailable 无法使用",
+      "ic_backspace 退格",
+      "ic_hand_drag 引导图示"
+    ],
+    "furniture": [
+      "fu_sofa3",
+      "fu_sofa2",
+      "fu_armchair",
+      "fu_bed_double",
+      "fu_bed_single",
+      "fu_dining",
+      "fu_desk",
+      "fu_bookcase",
+      "fu_wardrobe",
+      "fu_tv_stand",
+      "fu_custom"
+    ],
+    "note": "样稿第 4–6 节与第 9 节原型画了全部图标的草图并已与本 JSON 同步；两者冲突时以本 JSON 为准，样稿只取图标造型。研发站描成 24 / 32 / 40 dp 三档"
+  },
+  "needsCheck": [
+    "PlaneAnchor 顶点 / 位姿 / 语义字段的确切名字",
+    "LocalDisableAlpha 名字",
+    "没有 FLOOR 时用 Stage 地面高度兜底是否可靠",
+    "系统设置里的房间扫描数据是否直接进入 PlaneTrackingManager / MeshTrackingManager（真机核对；本设计不依赖）",
+    "模拟器房间的空间网格实际上报哪些语义（SOFA / BED 等是否出现），聚类阈值 15 cm 是否合适",
+    "空间网格 start / stop 的耗时与 60 s 后停用是否会漏掉后来才看到的家具（漏了就改为每次放下家具时短暂重开 10 s）"
+  ],
+  "primitiveRecipes": {
+    "rule": "坐标都按本件 W（宽，x）、D（深，z，正面朝 +z）、H（高，y）的比例；单位厘米处写死的为固定尺寸，不随比例变；最小尺寸夹到 2 cm",
+    "sofa3 / sofa2 / armchair": "座 = W × D × 0.5H（布面）；靠背 = W × 0.22D × H，贴后边（布面）；扶手 ×2 = 15 cm × D × 0.68H，贴左右（布面）；脚 ×4 = 4×4×6 cm（木面，计入 H）",
+    "bedDouble / bedSingle": "床架 = W × D × 0.3H（木面）；床垫 = (W−4 cm) × (D−4 cm) × 0.25H，放在床架上（布面）；床头板 = W × 6 cm × H，贴后边（木面）。默认 H 改为床头板高 90 cm（床面约 50 cm）",
+    "dining / desk": "桌面 = W × D × 4 cm，顶在 H（木面）；腿 ×4 = 5×5 cm × (H−4 cm)；desk 另加抽屉柜 = 0.35W × (D−6 cm) × 0.55H 挂在右侧桌面下",
+    "bookcase": "侧板 ×2、顶板、底板、背板 各 2 cm 厚；隔板 = 按 H 均分 4 格的 3 块（木面），正面敞开",
+    "wardrobe": "柜体 = W × D × H（木面）；正面两扇门板 = 0.5W−1 cm × 2 cm × (H−4 cm)，中缝 2 cm；两根把手 2×2×20 cm",
+    "tvStand": "柜体 = W × D × 0.9H（木面）；顶板 = (W+2 cm) × (D+2 cm) × 0.1H；正面两个抽屉缝（1 cm 凹槽）",
+    "custom": "一个盒子 W × D × H（布面）",
+    "colors": "fabric #C9B79C、wood #A9825A；选中时不改颜色，只改尺寸盒边条为黄；撞了时整体叠 error 35%；走进去时整体 25% 透明；线框外观时外观隐藏、只留尺寸盒"
+  }
+}

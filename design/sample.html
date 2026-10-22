@@ -1,0 +1,796 @@
+<title>家具试摆 样稿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap">
+<style>
+/* 布局：单栏规格书，深色「透视房间」底；每个面板 / 状态一屏；面板 1 dp = 1 px 原尺寸；平面原型 1 cm = 1 单位 */
+:root{
+  --bg:#17191C; --bg-2:#1E2125; --panel:#24282D; --line:rgba(255,255,255,.12);
+  --ink:#F1F2F3; --ink-2:rgba(241,242,243,.74); --ink-3:rgba(241,242,243,.52);
+  /* SpatialUI 语义色（设计包 palette.colorScheme） */
+  --error:#FF5F52; --alert:#FF8A1F; --passable:#66E08A; --interaction:#FFC72C;
+  /* 品牌 token */
+  --masking:#3D8BFF; --masking-edge:#1F5FCC; --tape:#FFC72C; --tape-ink:#16181C; --blade:#0E0F12; --meter-red:#E23B2E;
+  --plate-ink:rgba(18,20,23,.94); --on-ink-fill:rgba(255,255,255,.14); --on-ink-2:rgba(255,255,255,.66); --stale:#9A9A96;
+  /* Material.Regular / Thick 玻璃（实机为浅色磨砂片，玻璃上文字一律 labelPrimary 深色） */
+  --glass:rgba(150,150,147,.80); --glass-thick:rgba(160,160,157,.88); --glass-rim:rgba(255,255,255,.35);
+  --label-primary:#16181C; --label-quaternary:rgba(22,24,28,.38);
+  --fill-primary:rgba(22,24,28,.78); --fill-tertiary:rgba(22,24,28,.10); --fill-secondary:rgba(255,255,255,.55);
+  --room-floor:#3A3833; --room-wall:#5B5852; --room-dark:#2B2A27;
+  --font:"Noto Sans","Noto Sans SC","Noto Sans CJK SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 80px}
+h1{font-size:30px;line-height:1.2;margin:0 0 6px;text-wrap:balance}
+h2{font-size:22px;line-height:1.25;margin:0;text-wrap:balance}
+h3{font-size:16px;margin:26px 0 10px;text-wrap:balance}
+p{margin:0 0 10px;max-width:72ch}
+.muted{color:var(--ink-2)} .tiny{font-size:12px;color:var(--ink-3)}
+code{font-family:var(--mono);font-size:.9em;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px}
+.hdr{padding:28px 0 18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--tape);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:14px;background:rgba(255,255,255,.12);font-size:12px;font-weight:600;white-space:nowrap}
+.chip.y{background:var(--tape);color:var(--tape-ink)} .chip.b{background:var(--masking);color:#fff}
+.howto{margin-top:16px;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.howto b{color:var(--tape)}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(23,25,28,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:0 max(16px,env(safe-area-inset-left,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+nav.toc ul{list-style:none;margin:0;padding:0;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.toc a{display:block;padding:10px;font-size:13px;font-weight:600;color:var(--ink-2);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink);border-color:var(--tape);outline:none}
+section{padding:40px 0 8px;border-bottom:1px solid var(--line)}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.num{font-family:var(--mono);font-size:13px;color:var(--tape);font-weight:600}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--bg-2)}
+table{border-collapse:collapse;width:100%;min-width:880px;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--ink-3);font-weight:600;background:var(--panel)}
+tr:last-child td{border-bottom:0}
+td.id{font-family:var(--mono);color:var(--tape);white-space:nowrap} td.nm{font-weight:600;white-space:nowrap}
+.go{appearance:none;border:0;background:rgba(255,255,255,.12);color:var(--ink);font:600 12px/1 var(--font);padding:8px 12px;border-radius:14px;cursor:pointer;white-space:nowrap}
+.go:hover{background:rgba(255,255,255,.22)} .go:focus-visible{outline:2px solid var(--tape);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.grid2>*{min-width:0}
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h4{margin:0 0 6px;font-size:14px}
+.card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.figure{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--room-dark);padding:12px}
+.figure svg{display:block;max-width:100%;height:auto}
+.spec{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:8px}
+
+/* ---------- 「透视房间」舞台：面板按 1 dp = 1 px 放在暗化的房间替身上 ---------- */
+.stage{position:relative;border-radius:16px;padding:28px;background:
+  radial-gradient(120% 90% at 30% 20%,#4a4741 0%,#2f2d29 55%,#1f1e1b 100%);overflow-x:auto;display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.stage>*{flex:none}
+.cap{font-size:12px;color:var(--ink-2);margin-top:8px;font-family:var(--mono)}
+
+/* SpatialUI 外观：玻璃根 + 组件 */
+.glass{background:var(--glass);backdrop-filter:blur(28px) saturate(1.2);-webkit-backdrop-filter:blur(28px) saturate(1.2);border-radius:28px;box-shadow:inset 0 0 0 1px var(--glass-rim),0 20px 40px rgba(0,0,0,.35);color:var(--label-primary)}
+.glass.thick{background:var(--glass-thick)}
+.ibtn{appearance:none;border:0;width:56px;height:48px;border-radius:24px;display:grid;place-items:center;background:var(--fill-tertiary);color:var(--label-primary);cursor:pointer;flex:none}
+.ibtn:hover{background:rgba(22,24,28,.18)} .ibtn:active{background:rgba(22,24,28,.26)}
+.ibtn:focus-visible,.tile:focus-visible,.seg button:focus-visible,.sbtn:focus-visible,.key:focus-visible,.dimrow:focus-visible{outline:2px solid var(--interaction);outline-offset:2px}
+.ibtn[disabled]{color:var(--label-quaternary);cursor:default}
+.ibtn svg,.tile svg,.sbtn svg{pointer-events:none}
+.seg{display:inline-flex;height:48px;padding:4px;border-radius:24px;background:var(--fill-tertiary);gap:2px}
+.seg button{appearance:none;border:0;min-width:56px;padding:0 12px;border-radius:20px;background:transparent;color:var(--label-primary);font:600 16px/1 var(--font);cursor:pointer;display:grid;place-items:center}
+.seg button[aria-pressed="true"]{background:var(--fill-secondary);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.sbtn{appearance:none;border:0;height:48px;padding:0 20px;border-radius:24px;display:inline-flex;align-items:center;gap:8px;font:600 16px/20px var(--font);cursor:pointer;background:var(--fill-tertiary);color:var(--label-primary)}
+.sbtn.err{background:var(--error);color:var(--tape-ink)} .sbtn.int{background:var(--interaction);color:var(--tape-ink)}
+.sbtn[disabled]{color:var(--label-quaternary);cursor:default}
+
+/* 家具库 400 × 288 */
+.lib{width:400px;height:288px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.lib .row1{display:flex;align-items:center;gap:8px;height:48px}
+.lib .row1 .sp{flex:1;display:flex;justify-content:center;align-items:center;font:600 14px/18px var(--font)}
+.tiles{display:grid;grid-template-columns:repeat(4,88px);grid-auto-rows:64px;gap:8px}
+.tile{appearance:none;border:0;border-radius:16px;background:var(--fill-tertiary);color:var(--label-primary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;padding:4px;font-family:var(--font)}
+.tile:hover{background:rgba(22,24,28,.18)}
+.tile .dm{font:600 14px/18px var(--font);font-variant-numeric:tabular-nums}
+.tile[disabled]{opacity:.38;cursor:default}
+.tiles.scanning{position:relative}
+.tiles .spin{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;pointer-events:none}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid rgba(22,24,28,.2);border-top-color:var(--label-primary);animation:spin 1s linear infinite}
+.spinner.sm{width:18px;height:18px;border-width:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 件条 384 × 72 / 384 × 312：玻璃边 3 dp + plateInk 内卡 */
+.strip{width:384px;border-radius:24px;padding:3px;background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:inset 0 0 0 1px var(--glass-rim),0 14px 30px rgba(0,0,0,.35)}
+.strip .card2{background:var(--plate-ink);border-radius:21px;padding:9px 10px;color:#fff;display:flex;flex-direction:column;gap:8px}
+.strip .row{display:flex;align-items:center;gap:6px;height:48px}
+.strip .ibtn{background:var(--on-ink-fill);color:#fff}
+.strip .ibtn:hover{background:rgba(255,255,255,.24)}
+.verdict{width:40px;height:40px;border-radius:20px;display:grid;place-items:center;flex:none;color:var(--tape-ink)}
+.verdict.ok{background:var(--passable)} .verdict.door{background:var(--alert)} .verdict.hit{background:var(--error)}
+.dimsbtn{appearance:none;border:0;flex:1;height:48px;border-radius:24px;background:var(--on-ink-fill);color:#fff;font:600 16px/20px var(--font);font-variant-numeric:tabular-nums;cursor:pointer;white-space:nowrap}
+.dimsbtn:hover{background:rgba(255,255,255,.24)}
+.sizing{display:flex;gap:12px;border-top:1px solid rgba(255,255,255,.14);padding-top:10px}
+.dimcol{display:flex;flex-direction:column;gap:8px;width:168px}
+.dimrow{appearance:none;border:0;height:56px;border-radius:16px;background:var(--on-ink-fill);color:#fff;display:flex;align-items:center;gap:10px;padding:0 12px;cursor:pointer;font-family:var(--font)}
+.dimrow .ax{font:600 12px/16px var(--font);color:var(--on-ink-2);width:20px;text-align:left}
+.dimrow .v{font:600 24px/30px var(--font);font-variant-numeric:tabular-nums}
+.dimrow .u{font:500 12px/16px var(--font);color:var(--on-ink-2)}
+.dimrow[aria-pressed="true"]{background:var(--interaction);color:var(--tape-ink)}
+.dimrow[aria-pressed="true"] .ax,.dimrow[aria-pressed="true"] .u{color:var(--tape-ink)}
+.keypad{display:grid;grid-template-columns:repeat(3,56px);grid-auto-rows:48px;gap:4px}
+.key{appearance:none;border:0;border-radius:24px;background:var(--on-ink-fill);color:#fff;font:600 16px/20px var(--font);cursor:pointer;display:grid;place-items:center}
+.key:hover{background:rgba(255,255,255,.24)} .key.ok{background:var(--interaction);color:var(--tape-ink)}
+.key[disabled]{opacity:.38;cursor:default}
+.dimrow.bad .v{color:var(--error)}
+
+/* 读数牌 */
+.plate{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:20px;background:var(--plate-ink);color:#fff;font:600 14px/18px var(--font);font-variant-numeric:tabular-nums;white-space:nowrap}
+.plate .dot{width:8px;height:8px;border-radius:4px;background:var(--passable)}
+.plate.tight{background:var(--alert);color:var(--tape-ink)}
+
+/* 更多菜单 / 对话框 / 提示条 / 引导 */
+.menu{width:256px;padding:8px;border-radius:24px;display:flex;flex-direction:column;gap:8px}
+.menu .r{display:flex;gap:4px;align-items:center}
+.menu .seg{width:100%} .menu .seg button{flex:1;min-width:0;padding:0 6px;font-size:14px}
+.dialog{width:400px;padding:32px;border-radius:32px;display:flex;flex-direction:column;gap:12px}
+.dialog .t{display:flex;align-items:center;gap:16px;font:600 24px/30px var(--font)}
+.dialog .b{font:500 16px/24px var(--font)}
+.dialog .btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.dialog .btns .sbtn{min-width:120px;justify-content:center}
+.snack{display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 8px 0 16px;border-radius:28px;min-width:240px;max-width:560px}
+.snack .m{font:600 16px/20px var(--font);white-space:nowrap;padding-right:8px}
+.snack .sbtn{height:40px;padding:0 14px;background:var(--interaction);color:var(--tape-ink)}
+.coach{width:360px;height:80px;padding:12px 8px 12px 16px;border-radius:24px;display:flex;align-items:center;gap:12px}
+.coach .m{font:500 16px/24px var(--font);flex:1}
+
+/* ---------- 可交互原型 ---------- */
+.proto{display:grid;grid-template-columns:minmax(0,1fr) 432px;gap:20px;align-items:start}
+@media (max-width:980px){.proto{grid-template-columns:minmax(0,1fr)}}
+.plan{position:relative;border-radius:16px;background:var(--room-dark);border:1px solid var(--line);padding:10px;min-width:0}
+.plan svg{display:block;width:100%;height:auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.planbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;color:var(--ink-2)}
+.statepill{font-family:var(--mono);font-size:12px;padding:4px 10px;border-radius:12px;background:rgba(255,199,44,.16);color:var(--tape)}
+.overlay{position:absolute;left:50%;transform:translateX(-50%);z-index:5}
+.overlay.top{top:20px} .overlay.mid{top:30%}
+.side{display:flex;flex-direction:column;gap:14px;align-items:flex-start;min-width:0}
+.sidecap{font-size:12px;color:var(--ink-3);font-family:var(--mono)}
+.proto .stagebg{border-radius:16px;padding:16px;background:radial-gradient(120% 90% at 30% 20%,#4a4741 0%,#2f2d29 60%,#1f1e1b 100%);width:100%;display:flex;flex-direction:column;gap:14px;align-items:flex-start;overflow-x:auto}
+.proto .stagebg>*{flex:none}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-2);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--bg-2)}
+.sw .c{height:46px} .sw .l{padding:8px 10px;font-size:12px} .sw .l b{display:block;font-size:12.5px}
+.lost svg .piece-g{filter:grayscale(1)}
+/* 本轮改动标记 */
+.chg{position:relative;outline:2px dashed var(--tape);outline-offset:6px;border-radius:12px}
+.chgtag{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:var(--tape);color:var(--tape-ink);font-size:11.5px;font-weight:700;letter-spacing:.02em;vertical-align:middle;white-space:nowrap}
+.changes{margin-top:14px;padding:14px 16px;border-radius:14px;background:rgba(255,199,44,.10);border:1px solid rgba(255,199,44,.45)}
+.changes h4{margin:0 0 6px;font-size:14px;color:var(--tape)}
+.changes ol{margin:0;padding-left:20px;font-size:13.5px;color:var(--ink)}
+.changes li{margin:2px 0}
+.elev{display:flex;flex-wrap:wrap;gap:18px 22px;align-items:flex-end}
+.elev figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.elev figcaption{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7H15a5 5 0 0 1 0 10H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 3 5 7l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></symbol>
+    <symbol id="i-solid" viewBox="0 0 24 24"><path d="M4 11v7h16v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2H8v-2a2 2 0 0 0-2-2 2 2 0 0 0-2 2Z" fill="currentColor"/><path d="M6 9V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-wire" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4Z M4 8l8 4 8-4 M12 12v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-rot" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 4v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><text x="12" y="15.5" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" font-family="Noto Sans,sans-serif">90</text></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 22 20H2Z" fill="currentColor"/><path d="M12 10v4.5M12 17v.5" stroke="var(--alert)" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-hit" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 5H6v14h8M10 12h10M17 9l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-retry" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lost" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 17.5 17.5 6.5" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 7H9l-5 5 5 5h11Z M12 10l4 4M16 10l-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <!-- 模板图标 40 dp -->
+    <symbol id="t-sofa3" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M4 20v10h32V20"/><path d="M4 20a3 3 0 0 1 6 0v4h20v-4a3 3 0 0 1 6 0"/><path d="M8 18v-5a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v5M16.7 11v13M23.3 11v13"/><path d="M7 30v3M33 30v3"/></g></symbol>
+    <symbol id="t-sofa2" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M7 20v10h26V20"/><path d="M7 20a3 3 0 0 1 6 0v4h14v-4a3 3 0 0 1 6 0"/><path d="M11 18v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5M20 11v13"/><path d="M10 30v3M30 30v3"/></g></symbol>
+    <symbol id="t-armchair" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M10 20v10h20V20"/><path d="M10 20a3 3 0 0 1 6 0v4h8v-4a3 3 0 0 1 6 0"/><path d="M14 18v-6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><path d="M13 30v3M27 30v3"/></g></symbol>
+    <symbol id="t-bedDouble" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M5 30V12M35 30V20M5 24h30M5 30h30"/><path d="M5 20h30v4"/><rect x="8" y="15" width="9" height="5" rx="2"/><rect x="19" y="15" width="9" height="5" rx="2"/></g></symbol>
+    <symbol id="t-bedSingle" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M9 30V12M31 30V20M9 24h22M9 30h22"/><path d="M9 20h22v4"/><rect x="12" y="15" width="9" height="5" rx="2"/></g></symbol>
+    <symbol id="t-dining" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 15h32M8 15v17M32 15v17M8 22h24"/></g></symbol>
+    <symbol id="t-desk" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M5 15h30M7 15v17M33 15v17"/><rect x="21" y="15" width="12" height="9"/><path d="M25 19.5h4"/></g></symbol>
+    <symbol id="t-bookcase" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="11" y="4" width="18" height="32"/><path d="M11 12h18M11 20h18M11 28h18"/><path d="M14 12V7M17 12V8M23 20v-5M26 28v-4"/></g></symbol>
+    <symbol id="t-wardrobe" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><rect x="8" y="4" width="24" height="31"/><path d="M20 4v31M17 18v4M23 18v4M10 35v2M30 35v2"/></g></symbol>
+    <symbol id="t-tvStand" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="9" y="5" width="22" height="13" rx="1.5"/><rect x="4" y="23" width="32" height="9"/><path d="M15 27.5h10M7 32v3M33 32v3M20 18v5"/></g></symbol>
+    <symbol id="t-custom" viewBox="0 0 40 40"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 14l14-7 14 7v14l-14 7-14-7Z M6 14l14 7 14-7 M20 21v14"/></g><path d="M31 3v8M27 7h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+<header class="hdr">
+  <div class="eyebrow">空间应用黑灯工厂 · 设计站 · 门 B 方案确认</div>
+  <h1>家具试摆 Furniture Fit · 样稿 v1.1</h1>
+  <p class="muted">1.6 米的沙发放得下吗？点一下，它就 1:1 落在你家地板上；拖到墙边自动贴上，四边拉出卷尺告诉你还剩几厘米、人走不走得过去。</p>
+  <div class="chips chg">
+    <span class="chip y">只有 Full Space · Stage · Mixed（透视），没有 Shared Space</span>
+    <span class="chip">MR：平面检测 + 空间网格语义 + 空间锚点</span>
+    <span class="chip">骨架 D · 透视锚点工具</span>
+    <span class="chip">参考仓库：空间尺 Spatial Ruler</span>
+    <span class="chip b">交互参考 IKEA Place · Meta Layout（不含其商品数据）</span>
+    <span class="chip">家具外观：基本形状拼成，无外部模型</span>
+    <span class="chip">SpatialUI + PicoTheme · 无 Material</span>
+    <span class="chip">中英双语 · cm / in · 离线</span>
+    <a class="chip" href="https://claude.ai/artifact/Ut3pA6i8R3maFhnAMREZw3" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:none">PRD ↗</a>
+  </div>
+  <div class="howto">
+    <div class="changes" style="margin:0 0 12px">
+      <h4>本轮改动（门 B 第 1 次「改」，按你的两条评论）· 页面里用黄色虚线框标出</h4>
+      <ol>
+        <li><b>只用 Full Space 与 SDK 的 MR 能力：</b>容器本来就是 Stage · Mixed，所有面板都是 Stage 内附着面板；现在写明没有 Shared Space、也不留降级。查了 pico-dev-knowledge 和 SDK 6.1 文档：没有叫 scene capture 的公开 API，环境感知只有 平面检测、空间网格、空间锚点。所以真实家具改用<b>空间网格</b>识别：网格顶点带 SOFA / BED / TABLE / CABINET 等语义，聚成一件件真实家具，参与碰撞、净距和通道检查；撞上时它在地上描一圈红虚线。平面检测继续管地板、墙、门窗。（第 2、7、9 节）</li>
+        <li><b>家具外观改成基本形状拼成：</b>去掉 Kenney 模型，沙发 = 座 + 靠背 + 两个扶手，床 = 床架 + 床垫 + 床头板，桌 = 桌面 + 四条腿……不依赖任何外部模型。床的默认高度改为床头板 90 cm。（第 4 节新图、第 9 节原型）</li>
+      </ol>
+    </div>
+    <p style="margin:0"><b>怎么评：</b>在这页上评论「过」或「改：&lt;意见&gt;」；也可以在面板上点 [继续] / [改…]，或在总控聊天里说。<br><span class="muted">最快看法：拉到第 9 节原型，点格子放沙发，拖到墙边，看四边卷尺；第 1 节每一行的 [看] 能把原型直接跳到那个状态。</span></p>
+  </div>
+</header>
+
+<nav class="toc" aria-label="目录"><ul>
+  <li><a href="#overview">1 状态总览</a></li>
+  <li><a href="#layout">2 空间布局</a></li>
+  <li><a href="#signature">3 签名</a></li>
+  <li><a href="#library">4 家具库</a></li>
+  <li><a href="#strip">5 件条</a></li>
+  <li><a href="#system">6 读数·菜单·对话框</a></li>
+  <li><a href="#rules">7 规则</a></li>
+  <li><a href="#tokens">8 色板与字体</a></li>
+  <li><a href="#proto">9 可交互原型</a></li>
+</ul></nav>
+
+<section id="overview">
+  <div class="sec-head"><span class="num">1</span><h2>状态总览</h2><span class="muted">设计包 states[] 逐行：名字 · 怎么到达 · QA 怎么截。[看] 把第 9 节原型跳到该态。</span></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>状态</th><th>怎么到达</th><th>QA 截图看什么</th><th></th></tr></thead>
+    <tbody id="stateRows"></tbody>
+  </table></div>
+</section>
+
+<section id="layout">
+  <div class="sec-head"><span class="num">2</span><h2>空间布局 · Stage Mixed</h2><span class="muted">没有窗口边框：家具是 1:1 的 3D 实体，面板都是 Stage 内附着面板。单位：米。</span></div>
+  <div class="grid2">
+    <div>
+      <h3 style="margin-top:0">俯视 · 一间 4.2 × 3.6 m 的客厅</h3>
+      <div class="figure"><svg viewBox="-40 -30 520 440" role="img" aria-label="俯视图：沙发贴着上墙，四边卷尺读数，门前区，用户与家具库面板">
+        <rect x="0" y="0" width="420" height="360" fill="#3A3833"/>
+        <g stroke="#8B877F" stroke-width="8" fill="none"><path d="M40 364H-4V-4H424V364H130"/></g>
+        <path d="M40 360 A90 90 0 0 1 130 270" fill="none" stroke="#8B877F" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="40" y1="360" x2="40" y2="270" stroke="#8B877F" stroke-width="2"/>
+        <text x="85" y="384" font-size="13" fill="#C9C5BC" text-anchor="middle" font-family="Noto Sans,sans-serif">门 0.9 m</text>
+        <rect x="40" y="280" width="90" height="80" fill="rgba(255,138,31,.10)" stroke="var(--alert)" stroke-dasharray="5 4" stroke-width="1.5"/>
+        <text x="85" y="275" font-size="11" fill="var(--alert)" text-anchor="middle" font-family="Noto Sans,sans-serif">门前 0.8 m</text>
+        <rect x="360" y="40" width="60" height="120" fill="#55524C" stroke="#7A766E"/>
+        <text x="390" y="104" font-size="11" fill="#C9C5BC" text-anchor="middle" transform="rotate(90 390 100)" font-family="Noto Sans,sans-serif">真实柜子（空间网格 CABINET）</text>
+        <rect x="160" y="0" width="100" height="4" fill="#9FC7FF"/><text x="210" y="-10" font-size="11" fill="#9FC7FF" text-anchor="middle" font-family="Noto Sans,sans-serif">窗</text>
+        <!-- 沙发 210 × 90 贴上墙 -->
+        <rect x="105" y="2" width="210" height="88" fill="none" stroke="var(--masking)" stroke-width="4"/>
+        <rect x="105" y="0" width="210" height="90" fill="rgba(255,255,255,.14)" stroke="var(--interaction)" stroke-width="2"/>
+        <text x="210" y="50" font-size="13" fill="#fff" text-anchor="middle" font-family="Noto Sans,sans-serif">三人沙发 210 × 90</text>
+        <rect x="130" y="-1" width="160" height="3" fill="var(--interaction)"/>
+        <!-- 卷尺：左 105 cm、右 45 cm、前 270 cm(>2 m 不画) -->
+        <g font-family="Noto Sans,sans-serif" font-size="12" font-weight="600">
+          <rect x="0" y="40" width="105" height="10" fill="var(--tape)"/><rect x="0" y="40" width="3" height="10" fill="var(--meter-red)"/>
+          <rect x="22" y="56" width="62" height="20" rx="10" fill="var(--plate-ink)"/><circle cx="32" cy="66" r="3.5" fill="var(--passable)"/><text x="58" y="70" fill="#fff" text-anchor="middle">105 cm</text>
+          <rect x="315" y="40" width="45" height="10" fill="var(--tape)"/>
+          <rect x="308" y="56" width="58" height="20" rx="10" fill="var(--alert)"/><text x="337" y="70" fill="var(--tape-ink)" text-anchor="middle">45 cm</text>
+        </g>
+        <!-- 用户与家具库 -->
+        <circle cx="230" cy="250" r="14" fill="#E9E6DF"/><path d="M230 232l-8 -14h16Z" fill="#E9E6DF"/>
+        <text x="252" y="256" font-size="12" fill="#E9E6DF" font-family="Noto Sans,sans-serif">你</text>
+        <rect x="178" y="205" width="26" height="14" rx="4" fill="rgba(160,160,157,.9)" transform="rotate(-18 191 212)"/>
+        <text x="150" y="196" font-size="11" fill="#E9E6DF" font-family="Noto Sans,sans-serif">家具库 0.6 m · 左下</text>
+        <g font-family="var(--mono)" font-size="11" fill="#8B877F"><text x="210" y="-18" text-anchor="middle">4.2 m</text><text x="-26" y="180" text-anchor="middle" transform="rotate(-90 -26 180)">3.6 m</text></g>
+      </svg></div>
+      <p class="spec">右侧 45 cm &lt; 80 cm → 橙底（人过不去）；左侧 105 cm → 绿点；前方 2.7 m &gt; 2 m 不画；贴墙那一面换成黄色短条。每面在全宽范围内取最小净距。</p>
+    </div>
+    <div>
+      <h3 style="margin-top:0">侧视 · 从你站的地方看</h3>
+      <div class="figure"><svg viewBox="0 0 480 300" role="img" aria-label="侧视图：头 1.6 m，家具库在 0.6 m 处视线下 22 度，沙发在 1.4 m 外的地板上，件条在沙发上方 12 cm">
+        <rect x="0" y="250" width="480" height="50" fill="#3A3833"/><line x1="0" y1="250" x2="480" y2="250" stroke="#8B877F"/>
+        <rect x="455" y="20" width="10" height="230" fill="#5B5852"/>
+        <g fill="#E9E6DF"><circle cx="70" cy="74" r="14"/><rect x="58" y="92" width="24" height="90" rx="10"/><rect x="62" y="180" width="7" height="70"/><rect x="72" y="180" width="7" height="70"/></g>
+        <line x1="84" y1="74" x2="128" y2="92" stroke="#C9C5BC" stroke-dasharray="3 3"/>
+        <rect x="124" y="86" width="40" height="22" rx="5" fill="rgba(160,160,157,.92)" transform="rotate(-12 144 97)"/>
+        <text x="122" y="128" font-size="11" fill="#C9C5BC" font-family="Noto Sans,sans-serif">家具库 0.6 m · 下 26°</text>
+        <rect x="245" y="182" width="210" height="68" fill="rgba(255,255,255,.14)" stroke="var(--interaction)" stroke-width="2"/>
+        <rect x="245" y="246" width="210" height="4" fill="var(--masking)"/>
+        <ellipse cx="350" cy="252" rx="112" ry="5" fill="rgba(0,0,0,.35)"/>
+        <rect x="275" y="140" width="150" height="26" rx="12" fill="var(--plate-ink)" stroke="var(--glass-rim)"/>
+        <circle cx="290" cy="153" r="8" fill="var(--passable)"/><path d="M286 153l3 3 5-6" fill="none" stroke="var(--tape-ink)" stroke-width="2"/>
+        <text x="335" y="157.5" font-size="11.5" font-weight="600" fill="#fff" text-anchor="middle" font-family="Noto Sans,sans-serif">210×90×85</text>
+        <circle cx="390" cy="153" r="8" fill="rgba(255,255,255,.18)"/><circle cx="410" cy="153" r="8" fill="rgba(255,255,255,.18)"/>
+        <text x="350" y="134" font-size="11" fill="#C9C5BC" text-anchor="middle" font-family="Noto Sans,sans-serif">件条：朝你一侧，顶面 + 12 cm（夹在头高 −0.9 ~ −0.2 m）</text>
+        <g font-family="var(--mono)" font-size="11" fill="#8B877F"><text x="40" y="78" text-anchor="end">1.6 m</text><text x="245" y="276">1.4 m 外</text><text x="440" y="216" text-anchor="end">0.85 m</text></g>
+      </svg></div>
+      <p class="spec">点模板 → 家具落在头部地面投影前方 1.4 m，正面朝你、朝向取房间轴向；面板与读数牌都每帧朝向头部（不用 LookAtComponent）。</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card chg"><h4>用到的 MR 能力（都只在 Full Space） <span class="chgtag">本轮改动</span></h4><ul>
+      <li><b>平面检测</b> PlaneTrackingManager：地板高度与范围、墙 / 门 / 窗四边形 → 4 cm 薄盒、门前区</li>
+      <li><b>空间网格</b> MeshTrackingManager：顶点语义 SOFA / CHAIR / TABLE / BED / CABINET / REFRIGERATOR… 按语义 + 15 cm 邻近聚簇 → 每簇地面外接矩形 × 最高点 = 一件真实家具，参与碰撞、净距、通道</li>
+      <li><b>空间锚点</b>：一个房间锚点保存摆法</li>
+      <li>scene capture：SDK 6.1 没有这个公开 API（已查 pico-dev-knowledge 与本机文档库），用空间网格代替；没有网格数据时退回「家具顶面平面向下拉成柱」</li>
+    </ul></div>
+    <div class="card chg"><h4>3D 实体（ECS） <span class="chgtag">本轮改动</span></h4><ul>
+      <li>家具 ≤ 12 件：尺寸盒（12 根 8 mm 边条 + 白 14% 面）+ <b>基本形状外观</b>（每件 ≤ 12 个盒子，布面 / 木面两色，无贴图、无外部模型）+ 美纹纸脚印 + 接触影</li>
+      <li>净距尺带 ≤ 4 条（只属于选中那件），复用空间尺 10 cm 刻度段</li>
+      <li>门前区贴片、贴墙短条、撞上时真实家具的红色描边；障碍几何本身不可见</li>
+    </ul></div>
+    <div class="card"><h4>面板（附着面板，1 dp = 0.8 mm）</h4><ul>
+      <li>家具库 400 × 288 dp × 0.75 → 0.24 × 0.17 m，唯一常驻，视野左 18°、下 26°</li>
+      <li>件条 384 × 72 / 384 × 312 dp，恒定视角</li>
+      <li>读数牌 128 × 40、更多 256 × 232、对话框 400 × 212、提示条 240–560 × 56、引导 360 × 80；全部 ≤ 720 dp 高，预建池里取</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="signature">
+  <div class="sec-head"><span class="num">3</span><h2>签名 · 啪、嗒、拉</h2><span class="muted">落地贴出蓝色美纹纸脚印（像搬家前在地上贴胶带）→ 拖到墙边「嗒」贴上 → 四边拉出卷尺读净距。其余保持安静。</span></div>
+  <div class="figure"><svg viewBox="0 0 1000 230" role="img" aria-label="四步：落地、贴美纹纸、贴墙、四边卷尺">
+    <g font-family="Noto Sans,sans-serif" font-size="13" fill="#E9E6DF">
+      <!-- 1 落地 -->
+      <g transform="translate(20 20)"><polygon points="20,150 130,100 220,140 110,190" fill="#3A3833"/>
+        <g transform="translate(0 -36)" opacity=".85"><polygon points="70,140 130,113 170,131 110,158" fill="rgba(255,255,255,.18)" stroke="#fff"/><polygon points="70,140 70,110 130,83 130,113" fill="rgba(255,255,255,.10)" stroke="#fff"/><polygon points="130,113 130,83 170,101 170,131" fill="rgba(255,255,255,.06)" stroke="#fff"/></g>
+        <path d="M120 74v24" stroke="var(--tape)" stroke-width="2" marker-end="url(#ar)"/>
+        <text x="110" y="214" text-anchor="middle">① 点格子 · 0.3 s 落地</text></g>
+      <!-- 2 美纹纸 -->
+      <g transform="translate(265 20)"><polygon points="20,150 130,100 220,140 110,190" fill="#3A3833"/>
+        <polygon points="70,140 130,113 170,131 110,158" fill="none" stroke="var(--masking)" stroke-width="6" stroke-linejoin="bevel"/>
+        <polygon points="70,140 70,110 130,83 130,113" fill="rgba(255,255,255,.10)" stroke="#fff"/><polygon points="130,113 130,83 170,101 170,131" fill="rgba(255,255,255,.06)" stroke="#fff"/><polygon points="70,110 130,83 170,101 110,128" fill="rgba(255,255,255,.18)" stroke="#fff"/>
+        <text x="110" y="214" text-anchor="middle">② 啪：贴出美纹纸脚印</text></g>
+      <!-- 3 贴墙 -->
+      <g transform="translate(510 20)"><polygon points="20,150 130,100 220,140 110,190" fill="#3A3833"/><polygon points="20,150 20,40 130,-10 130,100" fill="#5B5852"/>
+        <polygon points="40,141 100,114 140,132 80,159" fill="none" stroke="var(--masking)" stroke-width="6"/>
+        <polygon points="40,141 40,111 100,84 100,114" fill="rgba(255,255,255,.10)" stroke="var(--interaction)" stroke-width="2"/><polygon points="40,111 100,84 140,102 80,129" fill="rgba(255,255,255,.18)" stroke="var(--interaction)" stroke-width="2"/><polygon points="100,114 100,84 140,102 140,132" fill="rgba(255,255,255,.06)" stroke="var(--interaction)" stroke-width="2"/>
+        <path d="M46 132 L96 110" stroke="var(--interaction)" stroke-width="5"/>
+        <text x="110" y="214" text-anchor="middle">③ 嗒：±5 cm 内自动贴墙</text></g>
+      <!-- 4 卷尺 -->
+      <g transform="translate(755 20)"><polygon points="20,150 130,100 220,140 110,190" fill="#3A3833"/><polygon points="20,150 20,40 130,-10 130,100" fill="#5B5852"/><polygon points="130,100 130,-10 220,30 220,140" fill="#4C4A45"/>
+        <polygon points="40,141 100,114 140,132 80,159" fill="none" stroke="var(--masking)" stroke-width="6"/>
+        <polygon points="40,111 100,84 140,102 80,129" fill="rgba(255,255,255,.18)" stroke="var(--interaction)" stroke-width="2"/><polygon points="40,141 40,111 100,84 100,114" fill="rgba(255,255,255,.10)" stroke="var(--interaction)" stroke-width="2"/><polygon points="100,114 100,84 140,102 140,132" fill="rgba(255,255,255,.06)" stroke="var(--interaction)" stroke-width="2"/>
+        <path d="M120 108 L200 73" stroke="var(--tape)" stroke-width="6"/>
+        <rect x="154" y="56" width="54" height="20" rx="10" fill="var(--alert)"/><text x="181" y="70" text-anchor="middle" fill="var(--tape-ink)" font-size="12" font-weight="600">45 cm</text>
+        <text x="110" y="214" text-anchor="middle">④ 拉：四边卷尺读净距</text></g>
+    </g>
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="var(--tape)"/></marker></defs>
+  </svg></div>
+  <p class="spec">美纹纸蓝 #3D8BFF 带宽 40 mm，从一角沿四边 0.35 s 贴出；贴墙轻抖 + 「嗒」；尺带复用空间尺（黄底黑刻度、零端红、钢钩）。</p>
+</section>
+
+<section id="library">
+  <div class="sec-head"><span class="num">4</span><h2>家具库面板 · 唯一常驻</h2><span class="muted">懒跟随在视野左下 0.6 m。第 1 行只有撤销和更多；每格只有图标 + 尺寸。点一个格子 = 立刻放到你面前，没有确认步骤。下面 1 dp = 1 px。</span></div>
+  <div class="stage">
+    <div><div id="libStatic"></div><div class="cap">正常 · 400 × 288 dp</div></div>
+    <div><div id="libFull"></div><div class="cap">≥ 10 件才显示件数 · 满 12 件格子禁用（S18）</div></div>
+    <div><div id="libScan"></div><div class="cap">扫描房间（S2）· 格子禁用 + 转圈</div></div>
+  </div>
+  <div class="chg" style="margin-top:28px">
+    <h3 style="margin-top:0">家具外观 · 基本形状拼成 <span class="chgtag">本轮改动</span></h3>
+    <p class="muted">正视图，按每个模板的默认尺寸（1 cm = 0.5 px）。全部是基础几何盒子按 W × D × H 比例摆，改尺寸时按比例重排；没有外部模型、没有贴图。「线框」外观时只剩尺寸盒。</p>
+    <div class="figure"><div class="elev" id="elev"></div></div>
+  </div>
+</section>
+
+<section id="strip">
+  <div class="sec-head"><span class="num">5</span><h2>件条 · 选中时出现在家具上方</h2><span class="muted">判定 · 尺寸 · 转 90° · 删除，没有关闭键：点地板或空处就取消选中。点尺寸展开数字键盘，W / D / H 点哪个改哪个，按确定才写入。</span></div>
+  <div class="stage">
+    <div><div id="stripOk"></div><div class="cap">勾 = 放得下 · 384 × 72 dp</div></div>
+    <div><div id="stripDoor"></div><div class="cap">警告三角 = 挡门</div></div>
+    <div><div id="stripHit"></div><div class="cap">叉 = 撞了</div></div>
+    <div><div id="stripSize"></div><div class="cap">改尺寸 · 384 × 312 dp</div></div>
+    <div><div id="stripBad"></div><div class="cap">超出 10–400 cm · 确定键禁用</div></div>
+  </div>
+</section>
+
+<section id="system">
+  <div class="sec-head"><span class="num">6</span><h2>读数牌 · 更多 · 对话框 · 提示条 · 引导</h2><span class="muted">Stage 里不用 AlertDialog / SnackbarHost（空间尺实测不出内容），都是预建附着面板，按组件规格拼。</span></div>
+  <div class="stage" id="sysStage"></div>
+</section>
+
+<section id="rules">
+  <div class="sec-head"><span class="num">7</span><h2>规则 · 一句话一条</h2><span class="muted">都在 ECS System 里每帧算；数字是设计常数，真机再调。</span></div>
+  <div class="grid2">
+    <div class="card"><h4>放</h4><ul><li>点格子 → 落在你面前 1.4 m 地板上（离墙太近就夹到墙前），正面朝你，自动选中</li><li>朝向只取房间轴向（最大那面墙的方向），转 90° 一步，转完穿墙就沿墙推出</li><li>最多 12 件；地板没认出来前格子禁用</li></ul></div>
+    <div class="card"><h4>挪</h4><ul><li>只有按住拖：沿地板滑（按抓点高度的水平面换算）</li><li>点地板 / 墙 / 空处 = 取消选中，家具不动</li><li>任一侧面离墙或别的家具 ±5 cm 内 → 贴上（家具之间要并排重叠 ≥ 10 cm）；撤销 20 步</li></ul></div>
+    <div class="card chg"><h4>认房间 <span class="chgtag">本轮改动</span></h4><ul><li>一打开就同时跑平面检测和空间网格；地板一出来格子就放开</li><li>墙、门窗、真实家具随看随认；提示「慢慢看一圈房间」</li><li>网格稳定（10 s 没有新块）后缓存真实家具、停掉网格以省电</li></ul></div>
+    <div class="card chg"><h4>判定（只看这一件） <span class="chgtag">本轮改动</span></h4><ul><li>叉 撞了：穿进墙 / 门窗 / 空间网格认出的真实家具 / 别的家具 &gt; 1 cm；虚拟家具双方都红，真实家具在地上描红虚线；脚印中心出了房间也算</li><li>警告三角 挡门：脚印伸进门前 0.8 m</li><li>勾 放得下：都没有</li></ul></div>
+    <div class="card"><h4>净距卷尺</h4><ul><li>选中那件每个侧面全宽扫一遍，取最近障碍；2 m 以内才画</li><li>≥ 80 cm 绿点「能过」；5–80 cm 橙底「人过不去」；&lt; 5 cm 换黄色贴墙短条</li><li>读数取整到 1 cm（in 取整到 1 in），不显示 ±</li></ul></div>
+    <div class="card"><h4>走进去</h4><ul><li>你站进某件家具的脚印（外扩 15 cm）→ 它变 25% 半透明，不影响判定</li></ul></div>
+    <div class="card"><h4>存</h4><ul><li>一个房间锚点（第一件放下时建）+ 每件的相对位置，改完 0.5 s 自动存</li><li>重开从地板升起 + 「已找回 n 件」；房间锚点没找到就提示可清除</li><li>全部本机，不联网，无账号 / API key</li></ul></div>
+  </div>
+</section>
+
+<section id="tokens">
+  <div class="sec-head"><span class="num">8</span><h2>色板与字体</h2><span class="muted">SpatialUI vibrant + 根面 Material.Regular 玻璃；题材取「搬家胶带 + 卷尺」。语义色作底时内容一律 tapeInk。</span></div>
+  <div class="swatches" id="swatches"></div>
+  <h3>字体 · Noto Sans + Noto Sans CJK SC（随包）</h3>
+  <div class="tablewrap"><table style="min-width:640px"><thead><tr><th>角色</th><th>规格</th><th>用在</th></tr></thead><tbody>
+    <tr><td>headlineSmall</td><td>24 / 30 · 600 · 等宽</td><td>改尺寸的数值</td></tr>
+    <tr><td>titleMedium</td><td>16 / 20 · 600 · 等宽</td><td>件条尺寸、提示条、数字键</td></tr>
+    <tr><td>labelLarge</td><td>14 / 18 · 600</td><td>件数、读数牌</td></tr>
+    <tr><td>labelMedium / labelSmall</td><td>12 / 16 · 600 · 11 / 14 · 500</td><td>格子名字 / 格子尺寸</td></tr>
+    <tr><td>bodyLargeMultiline</td><td>16 / 24 · 500</td><td>对话框正文、引导</td></tr>
+  </tbody></table></div>
+  <p class="tiny" style="margin-top:8px">中文 ≤ 17 sp 不用 Bold；数字一律等宽。</p>
+</section>
+
+<section id="proto">
+  <div class="sec-head"><span class="num">9</span><h2>可交互原型 · 俯视房间 + 面板</h2><span class="muted">左边是房间平面（1 格 = 50 cm），右边是你视野里的面板。点格子放家具；在平面里按住拖家具（贴墙、撞柜子、挡门实时变）；点地板取消选中；拖「你」走进家具看半透明。</span></div>
+  <div class="proto">
+    <div class="plan" id="plan">
+      <div class="planbar"><span class="statepill" id="statePill">S3 空房间</span><span id="planHint">点右边家具库的格子放一件</span></div>
+      <svg id="planSvg" viewBox="-30 -30 480 430" aria-label="房间平面"></svg>
+      <div class="legend chg" style="padding:4px 6px"><span><i style="background:var(--masking)"></i>美纹纸脚印</span><span><i style="background:var(--tape)"></i>净距卷尺</span><span><i style="background:rgba(255,138,31,.6)"></i>门前区</span><span><i style="background:#55524C"></i>空间网格认出的真实家具（平时你看到的是实物，这里画出来便于评审）</span><span><i style="background:var(--error)"></i>撞了</span></div>
+      <div class="overlay top" id="ovTop"></div>
+      <div class="overlay mid" id="ovMid"></div>
+    </div>
+    <div class="side">
+      <div class="stagebg" id="sidePanels"></div>
+      <div class="sidecap" id="sideCap">视野左下 · 家具库；选中时件条出现在家具上方（这里并排画出）</div>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s);
+const icon=(id,size=24)=>`<svg width="${size}" height="${size}" aria-hidden="true"><use href="#${id}"/></svg>`;
+const T=[
+ {id:'sofa3',zh:'三人沙发',en:'3-seat sofa',d:[210,90,85]},
+ {id:'sofa2',zh:'双人沙发',en:'Loveseat',d:[160,85,85]},
+ {id:'armchair',zh:'单人椅',en:'Armchair',d:[80,80,85]},
+ {id:'bedDouble',zh:'双人床',en:'Double bed',d:[150,200,90]},
+ {id:'bedSingle',zh:'单人床',en:'Single bed',d:[90,200,90]},
+ {id:'dining',zh:'餐桌',en:'Dining table',d:[140,80,75]},
+ {id:'desk',zh:'书桌',en:'Desk',d:[120,60,75]},
+ {id:'bookcase',zh:'书柜',en:'Bookcase',d:[80,30,180]},
+ {id:'wardrobe',zh:'衣柜',en:'Wardrobe',d:[120,60,200]},
+ {id:'tvStand',zh:'电视柜',en:'TV stand',d:[180,40,50]},
+ {id:'custom',zh:'自定义',en:'Custom',d:[100,50,50]}
+];
+const TPL=Object.fromEntries(T.map(t=>[t.id,t]));
+const STATES=[
+ ['S1','准备中','启动应用','家具库先出现，格子只有转圈，格子与更多禁用'],
+ ['S2','扫描房间','还没有 FLOOR 平面；平面检测与空间网格同时在跑（模拟器约 20–45 s）','格子禁用；提示条「慢慢看一圈房间」+ 转圈'],
+ ['S3','空房间','有地面、没有家具','格子可点；第 1 行只有撤销（禁用）和更多，不显示件数'],
+ ['S4','已摆放','有家具、没选中（点地板 / 空处后）','地上蓝色脚印 + 家具；没有件条、没有卷尺'],
+ ['S5','选中','刚放下的自动选中；或点一件','黄边条；件条 勾 + 尺寸 + 转 90° + 删除；四边卷尺 + 读数牌'],
+ ['S6','拖动中','在家具上按住拖','家具沿地板跟手，卷尺读数实时变；件条隐藏'],
+ ['S7','贴墙','拖到离墙 ±5 cm 内松开','贴墙那面换成黄色短条，不画卷尺；判定勾'],
+ ['S8','撞了','穿进墙 / 别的家具 / 空间网格认出的真实家具，或出了房间','六面红 + 红边，件条叉；虚拟家具对方也红，真实家具在地上描红虚线'],
+ ['S9','挡门','脚印伸进门前 0.8 m','门前橙色贴片 + 虚线边；件条警告三角'],
+ ['S10','改尺寸','件条点尺寸；或放下「自定义」','件条展开：W / D / H 三行 + 3×4 数字键盘；按确定才写入；超范围确定禁用'],
+ ['S11','走进家具','你站进某件家具的脚印','那件变 25% 半透明，脚印仍实'],
+ ['S12','线框外观','更多 → 外观切到线框','家具只剩白边条 + 14% 白面，看得见后面的房间'],
+ ['S13','更多','家具库点更多','菜单：外观两段、语言三段、单位两段、全部清除、退出；第一下点菜单外只关菜单'],
+ ['S14','确认清除','更多 → 全部清除','对话框：垃圾桶 + 件数、「清除后无法撤销。」、取消 / 清除'],
+ ['S15','找回','有保存的摆法时重开','家具从地板升起；提示条「已找回 n 件」'],
+ ['S16','不在此房间','重开后 10 s 还没找到房间锚点（后台继续找，找到转 S15）','不显示家具；格子禁用；提示条「上次的摆法不在这里」+ 清除'],
+ ['S17','未保存','房间锚点创建失败','所有脚印变白色虚线；提示条「没能保存」+ 重试'],
+ ['S18','满了','第 12 件放下后','格子全禁用、显示 12/12；点格子提示「最多 12 件」'],
+ ['S19','定位丢失','空间定位丢失','家具去色、卷尺隐藏、拖动禁用；提示条常驻「定位丢失 · 环顾四周」'],
+ ['S20','不可用','缺 Full Space / 能力 / 权限','视线正前不可用对话框；家具库禁用'],
+ ['S21','保存中','放下第一件时建房间锚点（0.3–1 s）','第一件脚印黄色虚线缓慢转动，之后变实心蓝'],
+ ['S22','首次引导','首次放下第一件后（不管保存成功与否）','家具库右侧引导「按住拖到墙边」+ 勾']
+];
+const L={zh:{undo:'撤销',more:'更多',clear:'全部清除',cancel:'取消',clearBtn:'清除',retry:'重试',exit:'退出',
+  dlgBody:'清除后无法撤销。',blockedT:'空间能力不可用',blockedB:'请在系统设置中允许平面识别和空间锚点。',
+  scanning:'慢慢看一圈房间',restored:n=>`已找回 ${n} 件`,elsewhere:'上次的摆法不在这里',unsaved:'没能保存',limit:'最多 12 件',lost:'定位丢失 · 环顾四周',cleared:'已全部清除',coach:'按住拖到墙边',saved:'已保存'},
+ en:{undo:'Undo',more:'More',clear:'Clear all',cancel:'Cancel',clearBtn:'Clear',retry:'Retry',exit:'Exit',
+  dlgBody:"This can't be undone.",blockedT:'Spatial features unavailable',blockedB:'Allow plane detection and anchors in Settings.',
+  scanning:'Look around the room',restored:n=>`${n} pieces restored`,elsewhere:"Last layout isn't here",unsaved:'Not saved',limit:'Max 12 pieces',lost:'Tracking lost · look around',cleared:'All cleared',coach:'Hold and drag to a wall',saved:'Saved'}};
+
+/* ---------- 房间（cm）---------- */
+const ROOM={w:420,h:360};
+const WALLS=[{x0:-4,x1:0,y0:-4,y1:364,k:'wall'},{x0:420,x1:424,y0:-4,y1:364,k:'wall'},{x0:0,x1:420,y0:-4,y1:0,k:'wall'},{x0:0,x1:40,y0:360,y1:364,k:'wall'},{x0:130,x1:420,y0:360,y1:364,k:'wall'},{x0:40,x1:130,y0:360,y1:364,k:'door'}];
+const CAB={x0:360,x1:420,y0:40,y1:160,k:'real',name:'真实柜子 CABINET'};
+const RSOFA={x0:0,x1:70,y0:0,y1:75,k:'real',name:'真实单人沙发 SOFA'};
+const REAL=[CAB,RSOFA];
+const DOORZONE={x0:40,x1:130,y0:280,y1:360};
+
+let S={state:'S3',lang:'zh',unit:'cm',look:'solid',pieces:[],sel:null,sizing:false,field:0,buf:'',user:{x:230,y:300},
+  overlay:null,menu:false,coach:false,coachDone:false,lost:false,unsaved:false,saving:false,undo:[],dragging:false,uid:1,scanning:false,starting:false,restoring:false,hidden:false,snack:null};
+const t=k=>L[S.lang][k];
+const fmt=cm=>S.unit==='cm'?`${Math.round(cm)} cm`:`${Math.round(cm/2.54)} in`;
+const fmtV=cm=>S.unit==='cm'?Math.round(cm):Math.round(cm/2.54);
+const ext=p=>(p.rot%180===0)?{ex:p.w/2,ey:p.d/2}:{ex:p.d/2,ey:p.w/2};
+const box=p=>{const {ex,ey}=ext(p);return{x0:p.x-ex,x1:p.x+ex,y0:p.y-ey,y1:p.y+ey}};
+const ov=(a,b)=>Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0)>1&&Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0)>1;
+const ovArea=(a,b)=>Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0)>0&&Math.min(a.y1,b.y1)-Math.max(a.y0,b.y0)>0;
+const obstacles=(skip)=>[...WALLS,...REAL,...S.pieces.filter(p=>p!==skip).map(p=>({...box(p),k:'piece',p}))];
+function outside(p){return p.x<-20||p.x>ROOM.w+20||p.y<-20||p.y>ROOM.h+20}
+function hits(p){return obstacles(p).filter(o=>ov(box(p),o))}
+function verdict(p){if(hits(p).length||outside(p))return'hit';if(ovArea(box(p),DOORZONE))return'door';return'ok'}
+/* 吸附：有向距离 [−5, +5] cm 推到贴面；家具之间要求投影重叠 ≥ 10 cm */
+function snap(p){const {ex,ey}=ext(p);
+  for(const o of obstacles(p)){const b=box(p),need=o.k==='piece'?10:0.5;
+    const yo=Math.min(b.y1,o.y1)-Math.max(b.y0,o.y0), xo=Math.min(b.x1,o.x1)-Math.max(b.x0,o.x0);
+    if(yo>=need){let g=b.x0-o.x1; if(g>-5&&g<5){p.x=o.x1+ex;continue} g=o.x0-b.x1; if(g>-5&&g<5){p.x=o.x0-ex;continue}}
+    if(xo>=need){let g=b.y0-o.y1; if(g>-5&&g<5){p.y=o.y1+ey;continue} g=o.y0-b.y1; if(g>-5&&g<5){p.y=o.y0-ey}}
+  }}
+/* 转 90° 后穿墙：沿墙室内法线推出 */
+function pushOut(p){const {ex,ey}=ext(p);
+  if(p.x-ex<0)p.x=ex; if(p.x+ex>ROOM.w)p.x=ROOM.w-ex; if(p.y-ey<0)p.y=ey; if(p.y+ey>ROOM.h)p.y=ROOM.h-ey}
+/* 净距：每个侧面全宽扫最小距离 */
+function gaps(p){const b=box(p),out=[],obs=obstacles(p);
+  const sides=[{d:'L'},{d:'R'},{d:'T'},{d:'B'}];
+  for(const r of sides){let best=Infinity,at=null;
+    for(const o of obs){
+      if(r.d==='L'||r.d==='R'){const lo=Math.max(b.y0,o.y0),hi=Math.min(b.y1,o.y1); if(hi-lo<=0)continue;
+        const g=r.d==='L'?b.x0-o.x1:o.x0-b.x1; if(g<-1)continue; if(g<best){best=Math.max(0,g);at=(lo+hi)/2}}
+      else{const lo=Math.max(b.x0,o.x0),hi=Math.min(b.x1,o.x1); if(hi-lo<=0)continue;
+        const g=r.d==='T'?b.y0-o.y1:o.y0-b.y1; if(g<-1)continue; if(g<best){best=Math.max(0,g);at=(lo+hi)/2}}
+    }
+    if(best<=200)out.push({d:r.d,ax:(r.d==='L'||r.d==='R')?'x':'y',g:best,at});
+  }return out}
+function inside(p){const b=box(p),u=S.user;return u.x>b.x0-15&&u.x<b.x1+15&&u.y>b.y0-15&&u.y<b.y1+15}
+function pushUndo(){S.undo.push(JSON.stringify(S.pieces));if(S.undo.length>20)S.undo.shift()}
+const inRange=(i,n)=>{const cm=S.unit==='cm'?n:n*2.54;return cm>=10&&cm<=400};
+
+/* ---------- 面板 HTML ---------- */
+function libHTML(o={}){const busy=o.scan||o.start, dis=busy||o.blocked, full=S.pieces.length>=12, n=o.count!=null?o.count:S.pieces.length;
+  return `<div class="glass lib" role="group" aria-label="家具库">
+  <div class="row1">
+    <button class="ibtn" data-act="undo" aria-label="${t('undo')}" ${(!S.undo.length||dis)?'disabled':''}>${icon('i-undo')}</button>
+    <span class="sp">${n>=10?`${n}/12`:''}</span>
+    <button class="ibtn" data-act="more" aria-label="${t('more')}" ${(o.start||o.blocked)?'disabled':''}>${icon('i-more')}</button>
+  </div>
+  <div class="tiles">${o.start?'<div class="spin"><span class="spinner"></span></div>':T.map(x=>`<button class="tile" data-act="place" data-v="${x.id}" ${(dis||full||o.full)?'disabled':''} aria-label="${x[S.lang]}">${icon('t-'+x.id,32)}<span class="dm">${fmtV(x.d[0])}×${fmtV(x.d[1])}</span></button>`).join('')}</div>
+</div>`}
+function stripHTML(p,v,sizing){const vi=v==='ok'?'i-check':v==='door'?'i-warn':'i-hit', vl=v==='ok'?'放得下':v==='door'?'挡门':'撞了';
+  const dims=`${fmtV(p.w)}×${fmtV(p.d)}×${fmtV(p.h)}`;
+  let h=`<div class="strip" role="group" aria-label="件条"><div class="card2"><div class="row">
+   <span class="verdict ${v}" role="img" aria-label="${vl}">${icon(vi,24)}</span>
+   <button class="dimsbtn" data-act="size" aria-label="尺寸" aria-expanded="${!!sizing}">${dims}</button>
+   <button class="ibtn" data-act="rot" aria-label="转 90°">${icon('i-rot')}</button>
+   <button class="ibtn" data-act="del" aria-label="删除">${icon('i-trash')}</button></div>`;
+  if(sizing){const vals=[p.w,p.d,p.h],ax=['W','D','H'];
+    const bufN=S.buf===''?null:parseInt(S.buf,10), bad=bufN!=null&&!inRange(S.field,bufN);
+    h+=`<div class="sizing"><div class="dimcol">${vals.map((x,i)=>`<button class="dimrow ${S.field===i&&bad?'bad':''}" data-act="field" data-v="${i}" aria-pressed="${S.field===i}"><span class="ax">${ax[i]}</span><span class="v">${(S.field===i&&S.buf!=='')?S.buf:fmtV(x)}</span><span class="u">${S.unit}</span></button>`).join('')}</div>
+    <div class="keypad">${['1','2','3','4','5','6','7','8','9','⌫','0','✓'].map(k=>`<button class="key ${k==='✓'?'ok':''}" data-act="key" data-v="${k}" aria-label="${k==='⌫'?'退格':k==='✓'?'确定':k}" ${k==='✓'&&bad?'disabled':''}>${k==='⌫'?icon('i-back',22):k==='✓'?icon('i-check',22):k}</button>`).join('')}</div></div>`}
+  return h+'</div></div>'}
+const plateHTML=g=>g>=80?`<span class="plate"><span class="dot"></span>${fmt(g)}</span>`:`<span class="plate tight">${fmt(g)}</span>`;
+function menuHTML(){return `<div class="glass thick menu" role="menu" aria-label="${t('more')}">
+  <div class="r"><div class="seg" role="group" aria-label="外观"><button data-act="look" data-v="solid" aria-pressed="${S.look==='solid'}" aria-label="实体">${icon('i-solid',22)}</button><button data-act="look" data-v="wire" aria-pressed="${S.look==='wire'}" aria-label="线框">${icon('i-wire',22)}</button></div></div>
+  <div class="r"><div class="seg" role="group" aria-label="语言"><button data-act="lang" data-v="sys" aria-label="跟随系统" aria-pressed="false">${icon('i-globe',20)}</button><button data-act="lang" data-v="zh" aria-pressed="${S.lang==='zh'}">中文</button><button data-act="lang" data-v="en" aria-pressed="${S.lang==='en'}">EN</button></div></div>
+  <div class="r"><div class="seg" role="group" aria-label="单位"><button data-act="unit" data-v="cm" aria-pressed="${S.unit==='cm'}">cm</button><button data-act="unit" data-v="in" aria-pressed="${S.unit==='in'}">in</button></div></div>
+  <div class="r"><button class="sbtn" style="flex:1;justify-content:center" data-act="askclear" ${S.pieces.length?'':'disabled'}>${icon('i-trash',20)}${t('clear')}</button><button class="ibtn" style="background:var(--fill-primary);color:#fff" data-act="exit" aria-label="${t('exit')}">${icon('i-exit')}</button></div></div>`}
+function clearDlgHTML(n){return `<div class="glass thick dialog" role="dialog" aria-modal="true" aria-label="${t('clear')}"><div class="t">${icon('i-trash',32)}<span style="display:inline-flex;align-items:center;gap:6px">${icon('t-sofa3',26)}${n||S.pieces.length||4}</span></div><div class="b">${t('dlgBody')}</div><div class="btns"><button class="sbtn" data-act="cancel">${icon('i-close',20)}${t('cancel')}</button><button class="sbtn err" data-act="doclear">${icon('i-trash',20)}${t('clearBtn')}</button></div></div>`}
+function blockedHTML(){return `<div class="glass thick dialog" role="dialog" aria-modal="true" aria-label="${t('blockedT')}"><div class="t">${icon('i-lost',32)}${t('blockedT')}</div><div class="b">${t('blockedB')}</div><div class="btns"><button class="sbtn" data-act="exit">${icon('i-exit',20)}${t('exit')}</button><button class="sbtn int" data-act="retry">${icon('i-retry',20)}${t('retry')}</button></div></div>`}
+function snackHTML(ic,msg,act){return `<div class="glass thick snack" role="status">${ic==='spin'?'<span class="spinner sm"></span>':icon(ic)}<span class="m">${msg}</span>${act?`<button class="sbtn" data-act="${act[1]}">${icon(act[2],20)}${act[0]}</button>`:''}</div>`}
+function coachHTML(){return `<div class="glass thick coach"><svg width="56" height="28" viewBox="0 0 56 28" aria-hidden="true"><path d="M6 20c0-5 3-8 6-8s4 2 4 4v-7a2 2 0 0 1 4 0v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M24 14h16M36 10l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="46" y="2" width="5" height="24" fill="currentColor" opacity=".6"/></svg><span class="m">${t('coach')}</span><button class="ibtn" data-act="coachok" aria-label="知道了">${icon('i-check')}</button></div>`}
+
+/* ---------- 基本形状配方（设计包 primitiveRecipes）---------- */
+const FAB='#C9B79C',FAB2='#B3A083',WOOD='#A9825A',WOOD2='#8C6A47';
+const SHAPE={sofa3:'sofa',sofa2:'sofa',armchair:'sofa',bedDouble:'bed',bedSingle:'bed',dining:'table',desk:'desk',bookcase:'bookcase',wardrobe:'wardrobe',tvStand:'tvStand',custom:'box'};
+/* 俯视：本地坐标 x∈[-W/2,W/2]，y∈[-D/2,D/2]，正面朝 +y */
+function topRects(sh,W,D){const r=(x,y,w,h,c)=>({x,y,w,h,c}),L=-W/2,T=-D/2,arm=Math.min(15,W*.2);
+  switch(sh){
+   case'sofa':return[r(L,T,W,D,FAB),r(L+arm,T,W-2*arm,D*.22,FAB2),r(L,T,arm,D,FAB2),r(W/2-arm,T,arm,D,FAB2)];
+   case'bed':return[r(L,T,W,D,WOOD),r(L+2,T+8,W-4,D-10,FAB),r(L,T,W,6,WOOD2)];
+   case'table':return[r(L,T,W,D,WOOD)];
+   case'desk':return[r(L,T,W,D,WOOD),r(W/2-W*.35,T+3,W*.35,D-6,WOOD2)];
+   case'bookcase':return[r(L,T,W,D,WOOD),r(L+2,T+2,W-4,D-2,WOOD2)];
+   case'wardrobe':return[r(L,T,W,D,WOOD),r(-1,D/2-2,2,2,WOOD2)];
+   case'tvStand':return[r(L-1,T-1,W+2,D+2,WOOD)];
+   default:return[r(L,T,W,D,FAB)]}}
+function topSkin(p,hit){const rs=topRects(SHAPE[p.tpl],p.w,p.d);
+  return `<g transform="translate(${p.x} ${p.y}) rotate(${p.rot})" pointer-events="none" opacity="${hit?.75:1}">${rs.map(q=>`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="${q.c}" stroke="rgba(0,0,0,.18)" stroke-width=".8"/>`).join('')}</g>`}
+/* 正视：x∈[0,W]，y 向上 0..H */
+function frontRects(sh,W,H){const r=(x,y,w,h,c)=>({x,y,w,h,c}),arm=Math.min(15,W*.2);
+  switch(sh){
+   case'sofa':return[r(arm,.5*H,W-2*arm,.5*H,FAB2),r(0,6,W,.5*H-6,FAB),r(0,6,arm,.68*H-6,FAB2),r(W-arm,6,arm,.68*H-6,FAB2),r(3,0,4,6,WOOD2),r(W-7,0,4,6,WOOD2)];
+   case'bed':return[r(0,.55*H,W,.45*H,WOOD2),r(0,0,W,.3*H,WOOD),r(2,.3*H,W-4,.25*H,FAB)];
+   case'table':return[r(0,H-4,W,4,WOOD),r(2,0,5,H-4,WOOD2),r(W-7,0,5,H-4,WOOD2)];
+   case'desk':return[r(0,H-4,W,4,WOOD),r(2,0,5,H-4,WOOD2),r(W-W*.35,.45*H,W*.35,.55*H-4,WOOD2),r(W-7,0,5,.45*H,WOOD2)];
+   case'bookcase':{const a=[r(0,0,W,H,WOOD),r(2,2,W-4,H-4,'#4A3A28')];for(let i=1;i<4;i++)a.push(r(2,H*i/4,W-4,2,WOOD));return a}
+   case'wardrobe':return[r(0,0,W,H,WOOD),r(W/2-1,2,2,H-4,WOOD2),r(W/2-6,H*.45,2,20,'#3A2E20'),r(W/2+4,H*.45,2,20,'#3A2E20')];
+   case'tvStand':return[r(0,0,W,.9*H,WOOD),r(-1,.9*H,W+2,.1*H,WOOD2),r(W*.1,.45*H,W*.35,1,WOOD2),r(W*.55,.45*H,W*.35,1,WOOD2)];
+   default:return[r(0,0,W,H,FAB)]}}
+function elevSVG(t){const [W,,H]=t.d,s=.5,pad=4,vw=W*s+pad*2,vh=H*s+pad*2;
+  const rs=frontRects(SHAPE[t.id],W,H);
+  return `<svg width="${vw}" height="${vh}" viewBox="${-pad} ${-pad} ${vw} ${vh}" role="img" aria-label="${t.zh}正视"><g transform="translate(0 ${H*s}) scale(${s} ${-s})">${rs.map(q=>`<rect x="${q.x}" y="${q.y}" width="${q.w}" height="${q.h}" fill="${q.c}" stroke="rgba(0,0,0,.25)" stroke-width="1"/>`).join('')}</g><line x1="${-pad}" y1="${H*s}" x2="${vw-pad}" y2="${H*s}" stroke="#8B877F"/></svg>`}
+
+/* ---------- 平面渲染 ---------- */
+function planSVG(){const g=[];
+  g.push(`<rect class="floor" x="0" y="0" width="420" height="360" fill="#3A3833"/>`);
+  for(let x=50;x<420;x+=50)g.push(`<line x1="${x}" y1="0" x2="${x}" y2="360" stroke="rgba(255,255,255,.05)" pointer-events="none"/>`);
+  for(let y=50;y<360;y+=50)g.push(`<line x1="0" y1="${y}" x2="420" y2="${y}" stroke="rgba(255,255,255,.05)" pointer-events="none"/>`);
+  g.push(`<path d="M40 364H-4V-4H424V364H130" stroke="#8B877F" stroke-width="8" fill="none"/><line x1="40" y1="360" x2="40" y2="272" stroke="#8B877F" stroke-width="2"/><path d="M40 360A88 88 0 0 1 128 272" fill="none" stroke="#8B877F" stroke-dasharray="4 4"/>`);
+  g.push(`<text x="85" y="384" font-size="12" fill="#C9C5BC" text-anchor="middle">门</text><rect x="160" y="-4" width="100" height="4" fill="#9FC7FF"/>`);
+  const sp0=(S.hidden?[]:S.pieces).find(p=>p.id===S.sel);
+  for(const r of REAL){const hit=sp0&&ov(box(sp0),r);
+    g.push(`<rect x="${r.x0}" y="${r.y0}" width="${r.x1-r.x0}" height="${r.y1-r.y0}" fill="#55524C" stroke="${hit?'var(--error)':'#7A766E'}" stroke-width="${hit?3:1}" ${hit?'stroke-dasharray="7 5"':''}/>`);
+    const cx=(r.x0+r.x1)/2,cy=(r.y0+r.y1)/2,tall=r.y1-r.y0>r.x1-r.x0;
+    g.push(`<text x="${cx}" y="${cy+4}" font-size="9.5" fill="#C9C5BC" text-anchor="middle" ${tall?`transform="rotate(90 ${cx} ${cy})"`:''} pointer-events="none">${r.name.split(' ')[0]}</text>`)}
+  const vis=S.hidden?[]:S.pieces;
+  if(vis.some(p=>ovArea(box(p),DOORZONE)))g.push(`<rect x="40" y="280" width="90" height="80" fill="rgba(255,138,31,.25)" stroke="var(--alert)" stroke-dasharray="6 4" stroke-width="2" pointer-events="none"/>`);
+  vis.forEach((p,i)=>{const b=box(p),v=verdict(p),sel=p.id===S.sel,ghost=inside(p);
+    const dashW=S.unsaved, dashY=S.saving&&i===0;
+    const op=ghost?.25:1, edge=S.lost?'#9A9A96':v==='hit'?'var(--error)':sel?'var(--interaction)':'rgba(255,255,255,.9)';
+    const fill=S.lost?'rgba(154,154,150,.25)':v==='hit'?'rgba(255,95,82,.35)':S.look==='wire'?'rgba(255,255,255,.14)':'none';
+    const fp=dashY?'stroke="var(--tape)" stroke-dasharray="10 6"':dashW?'stroke="#fff" stroke-dasharray="8 6"':'stroke="var(--masking)"';
+    g.push(`<g class="piece" data-id="${p.id}" style="cursor:grab">`);
+    g.push(`<rect x="${b.x0+2}" y="${b.y0+2}" width="${b.x1-b.x0-4}" height="${b.y1-b.y0-4}" fill="none" ${fp} stroke-width="4">${dashY?'<animate attributeName="stroke-dashoffset" from="0" to="32" dur="1s" repeatCount="indefinite"/>':''}</rect>`);
+    g.push(`<g opacity="${op}"><rect x="${b.x0}" y="${b.y0}" width="${b.x1-b.x0}" height="${b.y1-b.y0}" fill="${fill}" stroke="${edge}" stroke-width="${sel||v==='hit'?2.5:1.5}"/>`);
+    if(S.look==='solid'&&!S.lost)g.push(topSkin(p,v==='hit'));
+    g.push(`</g></g>`);
+  });
+  const sp=vis.find(p=>p.id===S.sel);
+  if(sp&&!S.lost){const b=box(sp);
+    for(const r of gaps(sp)){
+      if(r.g<5){
+        if(r.ax==='x'){const x=r.d==='L'?b.x0:b.x1,h=(b.y1-b.y0)*.6;g.push(`<rect x="${x-2}" y="${sp.y-h/2}" width="4" height="${h}" fill="var(--interaction)" pointer-events="none"/>`)}
+        else{const y=r.d==='T'?b.y0:b.y1,w=(b.x1-b.x0)*.6;g.push(`<rect x="${sp.x-w/2}" y="${y-2}" width="${w}" height="4" fill="var(--interaction)" pointer-events="none"/>`)}
+        continue}
+      let x0,y0,x1,y1;
+      if(r.d==='L'){x0=b.x0-r.g;x1=b.x0;y0=y1=r.at}else if(r.d==='R'){x0=b.x1;x1=b.x1+r.g;y0=y1=r.at}else if(r.d==='T'){y0=b.y0-r.g;y1=b.y0;x0=x1=r.at}else{y0=b.y1;y1=b.y1+r.g;x0=x1=r.at}
+      const hor=r.ax==='x',pe='pointer-events="none"';
+      g.push(hor?`<rect x="${x0}" y="${y0-5}" width="${x1-x0}" height="10" fill="var(--tape)" stroke="var(--blade)" stroke-width=".8" ${pe}/>`:`<rect x="${x0-5}" y="${y0}" width="10" height="${y1-y0}" fill="var(--tape)" stroke="var(--blade)" stroke-width=".8" ${pe}/>`);
+      const n=Math.floor(r.g/10);for(let i=1;i<=n;i++){const off=i*10,big=i%10===0;
+        if(hor){const xx=r.d==='L'?x1-off:x0+off;g.push(`<line x1="${xx}" y1="${y0-5}" x2="${xx}" y2="${y0-5+(i%5===0?6:3.5)}" stroke="${big?'var(--meter-red)':'var(--tape-ink)'}" stroke-width="${big?2:.8}" ${pe}/>`)}
+        else{const yy=r.d==='T'?y1-off:y0+off;g.push(`<line x1="${x0-5}" y1="${yy}" x2="${x0-5+(i%5===0?6:3.5)}" y2="${yy}" stroke="${big?'var(--meter-red)':'var(--tape-ink)'}" stroke-width="${big?2:.8}" ${pe}/>`)}}
+      const mx=(x0+x1)/2,my=(y0+y1)/2,label=fmt(r.g),ok=r.g>=80,w=label.length*6.4+(ok?26:16);
+      const px=hor?mx:mx+(w/2+10), py=hor?my-18:my;
+      g.push(`<g ${pe}><rect x="${px-w/2}" y="${py-10}" width="${w}" height="20" rx="10" fill="${ok?'var(--plate-ink)':'var(--alert)'}"/>${ok?`<circle cx="${px-w/2+10}" cy="${py}" r="3.2" fill="var(--passable)"/>`:''}<text x="${px+(ok?5:0)}" y="${py+4}" font-size="11" font-weight="600" text-anchor="middle" fill="${ok?'#fff':'var(--tape-ink)'}">${label}</text></g>`);
+    }}
+  const u=S.user;g.push(`<g class="user" style="cursor:grab"><circle cx="${u.x}" cy="${u.y}" r="13" fill="#E9E6DF"/><path d="M${u.x} ${u.y-30}l-7 13h14Z" fill="#E9E6DF"/><text x="${u.x+18}" y="${u.y+4}" font-size="11" fill="#E9E6DF">你</text></g>`);
+  return g.join('')}
+
+/* ---------- 渲染 ---------- */
+function deriveState(){
+  if(S.overlay==='blocked')return'S20'; if(S.lost)return'S19'; if(S.overlay==='confirm')return'S14'; if(S.menu)return'S13';
+  if(S.starting)return'S1'; if(S.scanning&&!S.pieces.length)return'S2'; if(S.restoring)return S.restoring;
+  if(S.saving)return'S21'; if(S.unsaved)return'S17';
+  const sp=S.pieces.find(p=>p.id===S.sel);
+  if(sp&&S.sizing)return'S10';
+  if(S.pieces.some(inside))return'S11';
+  if(sp&&S.dragging)return'S6';
+  if(S.coach&&sp)return'S22';
+  if(sp){const v=verdict(sp);if(v==='hit')return'S8';if(v==='door')return'S9';if(gaps(sp).some(r=>r.g<5))return'S7';return'S5'}
+  if(S.scanning)return'S2';
+  if(S.pieces.length>=12)return'S18';
+  if(S.look==='wire'&&S.pieces.length)return'S12';
+  if(S.pieces.length)return'S4'; return'S3'}
+function render(){
+  const st=deriveState();S.state=st;const row=STATES.find(r=>r[0]===st);
+  $('#statePill').textContent=`${st} ${row[1]}`;
+  $('#planHint').textContent=st==='S3'?'点右边家具库的格子放一件':['S5','S7','S8','S9','S22'].includes(st)?'在平面里按住家具拖；点地板取消选中':st==='S6'?'松开看贴墙 / 撞了 / 挡门':st==='S4'?'点家具选中，或按住拖':'';
+  $('#plan').classList.toggle('lost',S.lost);
+  $('#planSvg').innerHTML=planSVG();
+  const sp=S.pieces.find(p=>p.id===S.sel);
+  let side=libHTML({scan:S.scanning,start:S.starting,blocked:S.overlay==='blocked'||S.restoring==='S16'});
+  if(sp&&!S.dragging&&!S.lost&&!S.hidden)side+=stripHTML(sp,verdict(sp),S.sizing);
+  if(S.coach&&sp)side+=coachHTML();
+  if(S.menu)side+=menuHTML();
+  $('#sidePanels').innerHTML=side;
+  let top='';
+  if(S.scanning)top=snackHTML('spin',t('scanning'));
+  else if(S.lost)top=snackHTML('i-lost',t('lost'));
+  else if(S.snack)top=S.snack();
+  $('#ovTop').innerHTML=top;
+  $('#ovMid').innerHTML=S.overlay==='confirm'?clearDlgHTML():S.overlay==='blocked'?blockedHTML():'';
+}
+
+/* ---------- 动作 ---------- */
+let snackTimer;
+function flash(fn,ms=2600){S.snack=fn;clearTimeout(snackTimer);if(ms)snackTimer=setTimeout(()=>{S.snack=null;if(S.restoring==='S15')S.restoring=false;render()},ms)}
+function place(id){
+  if(S.scanning)return;
+  if(S.pieces.length>=12){flash(()=>snackHTML('i-warn',t('limit')));render();return}
+  pushUndo();const tp=TPL[id];const p={id:S.uid++,tpl:id,w:tp.d[0],d:tp.d[1],h:tp.d[2],x:S.user.x,y:S.user.y-140,rot:0};
+  pushOut(p);snap(p);const first=!S.pieces.length;S.pieces.push(p);S.sel=p.id;S.sizing=id==='custom';S.field=0;S.buf='';
+  if(first){S.saving=true;if(!S.coachDone)S.coach=true;setTimeout(()=>{S.saving=false;render()},900)}
+  render()}
+function deselect(){S.sel=null;S.sizing=false;S.buf='';S.menu=false}
+function act(a,v){const sp=S.pieces.find(p=>p.id===S.sel);
+  switch(a){
+   case'place':place(v);return;
+   case'undo':if(S.undo.length){S.pieces=JSON.parse(S.undo.pop());if(!S.pieces.find(p=>p.id===S.sel))S.sel=null;S.sizing=false}break;
+   case'look':S.look=v;break;
+   case'more':S.menu=!S.menu;break;
+   case'lang':S.lang=v==='sys'?'zh':v;break;
+   case'unit':S.unit=v;S.buf='';break;
+   case'askclear':S.menu=false;S.overlay='confirm';break;
+   case'cancel':S.overlay=null;break;
+   case'doclear':pushUndo();S.pieces=[];S.sel=null;S.overlay=null;S.sizing=false;S.unsaved=false;S.undo=[];flash(()=>snackHTML('i-check',t('cleared')));break;
+   case'exit':S.menu=false;S.overlay=null;flash(()=>snackHTML('i-exit','（回到系统桌面）'));break;
+   case'retry':S.overlay=null;S.starting=true;render();setTimeout(()=>{S.starting=false;render()},900);return;
+   case'coachok':S.coach=false;S.coachDone=true;break;
+   case'size':S.sizing=!S.sizing;S.field=0;S.buf='';break;
+   case'rot':if(sp){pushUndo();sp.rot=(sp.rot+90)%360;pushOut(sp);snap(sp)}break;
+   case'del':if(sp){pushUndo();S.pieces=S.pieces.filter(p=>p!==sp);S.sel=null;S.sizing=false}break;
+   case'field':S.field=+v;S.buf='';break;
+   case'key':if(!sp)break;
+     if(v==='⌫')S.buf=S.buf.slice(0,-1);
+     else if(v==='✓'){if(S.buf!==''){const n=parseInt(S.buf,10);if(!inRange(S.field,n))break;pushUndo();sp[['w','d','h'][S.field]]=S.unit==='cm'?n:n*2.54;pushOut(sp);snap(sp)}S.buf='';S.sizing=false}
+     else if(S.buf.length<3)S.buf=(S.buf+v).replace(/^0+(?=\d)/,'');
+     break;
+   case'retrysave':S.unsaved=false;flash(()=>snackHTML('i-check',t('saved')),1500);break;
+   case'clearelse':S.restoring=false;S.hidden=false;S.pieces=[];S.snack=null;S.undo=[];break;
+  }render()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  if(b.closest('#libStatic,#libScan,#libFull,#stripOk,#stripDoor,#stripHit,#stripSize,#stripBad,#sysStage'))return;
+  act(b.dataset.act,b.dataset.v)});
+
+/* ---------- 平面拖动 ---------- */
+const svg=$('#planSvg');let drag=null;
+function pt(e){const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;return{x:vb.x+(e.clientX-r.left)/r.width*vb.width,y:vb.y+(e.clientY-r.top)/r.height*vb.height}}
+svg.addEventListener('pointerdown',e=>{const q=pt(e);const pg=e.target.closest('.piece'),ug=e.target.closest('.user');
+  if(S.overlay)return;
+  if(S.menu){S.menu=false;render();return}  /* 菜单开着：第一下点外面只关菜单 */
+  if(ug){drag={kind:'user',dx:S.user.x-q.x,dy:S.user.y-q.y};svg.setPointerCapture(e.pointerId);return}
+  if(pg&&!S.hidden){const p=S.pieces.find(x=>x.id===+pg.dataset.id);S.menu=false;
+    if(p.id!==S.sel){S.sizing=false;S.buf=''}S.sel=p.id;
+    if(!S.lost&&!S.scanning){drag={kind:'piece',p,dx:p.x-q.x,dy:p.y-q.y,moved:false,start:JSON.stringify(S.pieces)};svg.setPointerCapture(e.pointerId)}
+    render();return}
+  deselect();render()});  /* 点地板 / 墙 / 空处 = 取消选中 + 关菜单 */
+svg.addEventListener('pointermove',e=>{if(!drag)return;const q=pt(e);
+  if(drag.kind==='user'){S.user.x=Math.max(10,Math.min(410,q.x+drag.dx));S.user.y=Math.max(10,Math.min(350,q.y+drag.dy));render();return}
+  const p=drag.p;p.x=q.x+drag.dx;p.y=q.y+drag.dy;drag.moved=true;S.dragging=true;snap(p);render()});
+const end=()=>{if(drag&&drag.kind==='piece'&&drag.moved){S.undo.push(drag.start);if(S.undo.length>20)S.undo.shift();if(S.coach){S.coach=false;S.coachDone=true}}drag=null;if(S.dragging){S.dragging=false;render()}};
+svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+
+/* ---------- 跳状态 ---------- */
+function reset(){clearTimeout(snackTimer);S={...S,pieces:[],sel:null,sizing:false,buf:'',field:0,overlay:null,menu:false,coach:false,coachDone:true,lost:false,unsaved:false,saving:false,undo:[],dragging:false,scanning:false,starting:false,restoring:false,hidden:false,snack:null,look:'solid',user:{x:230,y:300}}}
+function mk(tpl,x,y,rot=0,dims){const tp=TPL[tpl],d=dims||tp.d;const p={id:S.uid++,tpl,w:d[0],d:d[1],h:d[2],x,y,rot};S.pieces.push(p);return p}
+function demoRoom(){mk('sofa3',210,45);mk('armchair',80,150,90);mk('tvStand',210,340,0)}
+const JUMP={
+ S1(){reset();S.starting=true},S2(){reset();S.scanning=true},S3(){reset()},
+ S4(){reset();demoRoom()},S5(){reset();demoRoom();S.pieces[0].y=60;S.sel=S.pieces[0].id},
+ S6(){reset();demoRoom();S.pieces[0].y=80;S.sel=S.pieces[0].id;S.dragging=true},
+ S7(){reset();demoRoom();S.sel=S.pieces[0].id},
+ S8(){reset();demoRoom();const p=S.pieces[0];p.x=300;p.y=90;S.sel=p.id},
+ S9(){reset();mk('sofa3',210,45);mk('armchair',80,150,90);const p=mk('bookcase',95,300);S.sel=p.id},
+ S10(){reset();demoRoom();const p=S.pieces[0];p.y=60;S.sel=p.id;S.sizing=true;S.field=0;S.buf='160'},
+ S11(){reset();demoRoom();S.user={x:200,y:60}},
+ S12(){reset();demoRoom();S.look='wire'},
+ S13(){reset();demoRoom();S.menu=true},S14(){reset();demoRoom();S.overlay='confirm'},
+ S15(){reset();demoRoom();S.restoring='S15';flash(()=>snackHTML('i-check',t('restored')(3)),2400)},
+ S16(){reset();demoRoom();S.hidden=true;S.restoring='S16';flash(()=>snackHTML('i-warn',t('elsewhere'),[t('clearBtn'),'clearelse','i-trash']),0)},
+ S17(){reset();demoRoom();S.unsaved=true;flash(()=>snackHTML('i-warn',t('unsaved'),[t('retry'),'retrysave','i-retry']),0)},
+ S18(){reset();const xs=[60,160,260,350];let i=0;for(const y of [50,150,245])for(const x of xs){mk(['armchair','desk','bookcase','sofa2'][i%4],x,y,0,[80,60,75]);i++}},
+ S19(){reset();demoRoom();S.lost=true},S20(){reset();S.overlay='blocked'},
+ S21(){reset();S.coachDone=false;const p=mk('sofa2',230,160);S.sel=p.id;S.saving=true;setTimeout(()=>{if(S.saving){S.saving=false;S.coach=true;render()}},1600)},
+ S22(){reset();const p=mk('sofa2',230,160);S.sel=p.id;S.coachDone=false;S.coach=true}
+};
+window.ffJump=id=>{JUMP[id]();render();document.getElementById('proto').scrollIntoView({behavior:'smooth'})};
+$('#stateRows').innerHTML=STATES.map(r=>`<tr><td class="id">${r[0]}</td><td class="nm">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><button class="go" onclick="ffJump('${r[0]}')">看</button></td></tr>`).join('');
+
+/* ---------- 静态展示 ---------- */
+const demoP={tpl:'sofa2',w:160,d:85,h:85,rot:0};
+$('#libStatic').innerHTML=libHTML({count:3});
+$('#libFull').innerHTML=libHTML({count:12,full:true});
+$('#libScan').innerHTML=libHTML({scan:true,count:0});
+$('#stripOk').innerHTML=stripHTML(demoP,'ok');
+$('#stripDoor').innerHTML=stripHTML({...demoP,tpl:'bookcase',w:80,d:30,h:180},'door');
+$('#stripHit').innerHTML=stripHTML(demoP,'hit');
+$('#stripSize').innerHTML=(()=>{S.field=0;S.buf='160';const h=stripHTML(demoP,'ok',true);S.buf='';return h})();
+$('#stripBad').innerHTML=(()=>{S.field=2;S.buf='450';const h=stripHTML(demoP,'ok',true);S.buf='';S.field=0;return h})();
+$('#sysStage').innerHTML=[
+ [`<div style="display:flex;gap:10px;flex-wrap:wrap">${plateHTML(92)}${plateHTML(45)}</div>`,'读数牌 128 × 40 · ≥ 80 绿点 / 5–80 橙底'],
+ [menuHTML(),'更多 256 × 232'],
+ [clearDlgHTML(4),'清除确认 400 × 212（S14）'],
+ [blockedHTML(),'不可用 400 × 236（S20）'],
+ [snackHTML('i-check',L.zh.restored(3)),'提示条 · 找回'],
+ [snackHTML('i-warn',L.zh.unsaved,['重试','x','i-retry']),'提示条 · 未保存 + 动作'],
+ [snackHTML('i-warn',L.zh.elsewhere,['清除','x','i-trash']),'提示条 · 不在此房间'],
+ [snackHTML('spin',L.zh.scanning),'提示条 · 找地面'],
+ [coachHTML(),'引导气泡 360 × 80（放下第一件后一次）']
+].map(([h,c])=>`<div>${h}<div class="cap">${c}</div></div>`).join('');
+const SW=[['maskingBlue','#3D8BFF','美纹纸脚印'],['tapeYellow · interaction','#FFC72C','卷尺、选中、确定、保存中'],['tapeInk','#16181C','黄 / 橙 / 红 / 绿底上的字'],['meterRed','#E23B2E','尺带零端、整米'],['passable','#66E08A','勾 放得下、≥ 80 cm'],['alert','#FF8A1F','警告三角 挡门、5–80 cm'],['error','#FF5F52','叉 撞了'],['plateInk','#121417','件条内卡、读数牌'],['fabric','#C9B79C','基本形状外观 · 布面'],['wood','#A9825A','基本形状外观 · 木面'],['staleGrey','#9A9A96','定位丢失去色'],['pieceFill','rgba(255,255,255,.14)','线框外观的面']];
+$('#swatches').innerHTML=SW.map(s=>`<div class="sw"><div class="c" style="background:${s[1]}"></div><div class="l"><b>${s[0]}</b>${s[1]} · ${s[2]}</div></div>`).join('');
+document.getElementById('elev').innerHTML=T.map(t=>`<figure>${elevSVG(t)}<figcaption>${t.zh} ${t.d[0]}×${t.d[1]}×${t.d[2]}</figcaption></figure>`).join('');
+render();
+})();
+</script>
