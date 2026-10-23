@@ -186,7 +186,7 @@ internal fun DialogPanel(clear: Boolean, blocked: Boolean, count: Int, onEvent: 
         if (blocked) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(painter = painterResource(R.drawable.ic_unavailable), contentDescription = null, modifier = Modifier.size(32.dp), tint = ink)
-                Text(text = rs(R.string.blocked_title), color = ink, style = FitType.title, maxLines = 1)
+                Text(text = rs(R.string.blocked_title), color = ink, style = FitType.title, maxLines = 2, modifier = Modifier.weight(1f))
             }
             Text(text = rs(R.string.blocked_body), color = ink, style = FitType.body)
             Spacer(modifier = Modifier.weight(1f))

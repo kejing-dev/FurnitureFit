@@ -64,6 +64,7 @@ internal object DebugCommands {
                 FitLog.i("CMD ${scene.debugGlide(id, to, (nums.getOrNull(3) ?: 1200f).toLong(), hold = s == "hold")}")
             }
             "drag_end" -> FitLog.i("CMD ${scene.debugDragEnd()}")
+            "stick" -> FitLog.i("CMD ${scene.debugStick(nums.getOrNull(0) ?: 0f, (nums.getOrNull(1) ?: 1000f).toLong())}")
             "ui" -> ui(vm, s ?: "")
             "obstacles" -> vm.debugSet { it.copy(obstaclesShown = s != "off") }
             "coach_reset" -> vm.debugCoachReset()

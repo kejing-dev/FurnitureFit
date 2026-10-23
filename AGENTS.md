@@ -4,6 +4,9 @@ MR furniture-fitting app for PICO OS 6. Kotlin, PICO Spatial SDK 6.1.9 (template
 (Full Space only, no Shared Space version), package `io.embodit.furniturefit`. Tap a tile and a piece of
 furniture lands 1:1 on your real floor; hold and drag it, it snaps to walls; yellow tapes read the clearance on
 every side; it turns red when it goes into a wall, another piece or real furniture; orange when it blocks a door.
+v0.1.1 (real-device feedback, taste profile D): the controller thumbstick X turns the selected (or dragged) piece about
+its own vertical axis; a piece moved or turned near a real-furniture dashed outline snaps onto it (centre and heading)
+and then stands in for that furniture (no collision with it); the strip shows one hint line 「摇杆左右转动」.
 
 Design package (binding): `../spatial-app-factory/apps/furniture-fit/design-package.json` (states S1 - S22,
 rules, panels, entities, palette, copy). Approved sample: `../spatial-app-factory/apps/furniture-fit/sample.html`.
@@ -91,6 +94,7 @@ or `tools/dev.sh cmd NAME [TEXT] [NUMBERS]`.
 | `select` / `tap` | a=id / - | select a piece / tap the empty room |
 | `drag` | a=id,x,z[,ms] [s=hold] | the piece glides to (x, z) through the live drag path (snap, colours, tapes); `hold` stays in S6 |
 | `drag_end` | | release the glide |
+| `stick` | a=x[,ms] | the thumbstick reads x (-1..1, right +) for ms (default 1000); same path as the controller |
 | `ui` | s=control | press a control: `undo more rotate remove size key_0..key_9 key_back key_ok row_0..2 tile_<id> look_solid look_wire lang_system lang_zh lang_en unit_cm unit_in menu_clear menu_exit dialog_cancel dialog_confirm blocked_exit blocked_retry snackbar_action coach_ok` |
 | `obstacles` | s=on/off | draw all obstacle geometry (cyan boxes) and door zones |
 | `coach_reset` / `restore_timeout` / `restore` | | first-run coach again / S16 now / restore from storage again (S15) |
@@ -118,7 +122,34 @@ S21 saving (yellow dashes) · S22 coachmark.
 `STATE Sx name` · `PLANES add` · `MESH add|tracking started|stopped|restart` · `ROOM floor= walls= real= doors=` ·
 `PIECE add|move|rotate|resize|remove` · `TAP piece|room|other` · `DRAG start|begin|move|end|refused` ·
 `ANCHOR create start|saved|failed|removed` · `SAVE` · `RESTORE` · `SNACK` · `COACH` · `UI <event>` · `TRACK lost|recovered` ·
-`BLOCKED` · `FOLLOW` · `RIG slot` · `PTR panel=` (debug) · `CMD` · `DUMP`.
+`BLOCKED` · `FOLLOW` · `RIG slot` · `PTR panel=` (debug) · `CMD` · `DUMP` ·
+`STICK start|turn start|turn end` · `PIECE turn|outline` · `SNAP outline` (v0.1.1). `FRAME` lines carry `stick=support=… actions=… x=…`.
+
+## Stick turn and outline snap (v0.1.1)
+
+- Input: `platform/tracking/ControllerStick.kt` - `ControllerTrackingProvider` + `ControllerActionListener` (SDK doc
+  "Obtain controller input actions", Full Space only); the listener stores the X of the stick pushed further; the ECS
+  system reads it once per frame (`FitScene.stepStick`). Started / stopped with the head tracker (attach, pause,
+  resume, detach). Hand gestures are a separate path and unchanged.
+- Rules (`domain/Fit.kt`, JVM-tested in `StickAndOutlineTest`): dead zone 0.15, square curve up to 90 deg/s; stick right
+  = clockwise seen from above (yaw down, like the 90° key). Outline snap: centre within 20 cm of a real outline's
+  centre and heading within 12° of one of its sides (k x 90°) -> onto it; `settle` = outline snap, else face snap; a
+  piece exactly on an outline (1 cm, 1°) does not collide with, gap to or face-snap against that furniture.
+- Live: the turn is drawn live and written once 150 ms after the stick is back in the dead zone (`FitEvent.PieceTurned`,
+  push-out + settle + save, one undo step). While dragging, the stick turns the dragged piece; the heading rides in
+  `DragEnded`. Real outlines within 60 cm of the focus piece are drawn as white dashes (snap targets), red when hit,
+  and flash yellow and wider for 0.8 s when a piece lands on one; the piece's footprint is taped down again.
+- Not turned while: no floor, tracking lost, blocked, elsewhere, clear dialog, menu open, keypad open.
+
+## Dialogs and the library (v0.1.2, QA #2 q2-1 / q2-2)
+
+- The clear and blocked dialogs open 0.9 m ahead at the gaze pitch; the library rests 0.6 m away. When the library
+  hides any part of the dialog as seen from the head (`domain/PanelDodge`, angular boxes + 3° margin, JVM-tested), it
+  slides beside the dialog at its height on the side it was on (left when centred) and comes back when the dialog
+  closes. Log: `DIALOG library aside|clear|back`.
+- Check: `tools/dialog_cases.sh NAME LEFT_DEG PITCH_DEG` (levels the camera, relaunches, turns, shoots S14 + S20).
+  Cases used: front 18 -26 · right 28 -26 · left 8 -26 · down23 0 -23 · level 0 0. A diagonal emulator drag only turns
+  one axis: the script drags each axis separately.
 
 ## Runtime facts (emulator, SDK 6.1.9, 2026-10-21)
 

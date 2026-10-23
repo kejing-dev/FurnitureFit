@@ -70,7 +70,7 @@ object PanelSizes {
     const val LIBRARY_W = 400f
     const val LIBRARY_H = 288f
     const val STRIP_W = 384f
-    const val STRIP_H = 72f
+    const val STRIP_H = 96f
     const val SIZING_W = 384f
     const val SIZING_H = 312f
     const val GAP_W = 128f
@@ -78,7 +78,7 @@ object PanelSizes {
     const val MENU_W = 256f
     const val MENU_H = 232f
     const val DIALOG_W = 400f
-    const val DIALOG_H = 236f
+    const val DIALOG_H = 268f
     const val SNACK_W = 560f
     const val SNACK_H = 56f
     const val COACH_W = 360f

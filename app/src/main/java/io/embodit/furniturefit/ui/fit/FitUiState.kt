@@ -155,9 +155,11 @@ sealed interface FitEvent {
     /** A tap on the floor, a wall or the empty room. */
     data object EmptyTapped : FitEvent
     data class DragStarted(val id: Int) : FitEvent
-    /** [center]: where the scene let go of the piece (already snapped); null when cancelled. */
-    data class DragEnded(val id: Int, val center: io.embodit.furniturefit.domain.P2?) : FitEvent
+    /** [center]: where the scene let go of the piece (already snapped); null when cancelled. [yaw]: its heading then (the stick may turn it while dragged). */
+    data class DragEnded(val id: Int, val center: io.embodit.furniturefit.domain.P2?, val yaw: Float? = null) : FitEvent
     data object RotateClicked : FitEvent
+    /** The thumbstick let go of the piece it was turning: [yaw] is its new heading (radians, not yet snapped). */
+    data class PieceTurned(val id: Int, val yaw: Float) : FitEvent
     data object DeleteClicked : FitEvent
     data object SizeClicked : FitEvent
     data class SizingRow(val row: Int) : FitEvent

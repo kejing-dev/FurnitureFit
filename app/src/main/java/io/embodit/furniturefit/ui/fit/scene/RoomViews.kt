@@ -97,6 +97,8 @@ internal class FloorRect(parent: Entity, meshes: FitMeshes, edge: com.pico.spati
     private val sides = List(4) { Strip(parent, meshes.dashes, edge, "$name:edge$it") }
     private val area: Box? = fill?.let { Box(parent, meshes.square, it, "$name:fill").also { b -> b.show(false) } }
 
+    fun edge(m: com.pico.spatial.core.ecs.resource.Material) = sides.forEach { it.material(m) }
+
     fun draw(p: Prism, y: Float, width: Float) {
         val c = p.corners
         for (k in 0 until 4) sides[k].draw(c[k].at(y + 0.003f), c[(k + 1) % 4].at(y + 0.003f), width, Vec3.UP)

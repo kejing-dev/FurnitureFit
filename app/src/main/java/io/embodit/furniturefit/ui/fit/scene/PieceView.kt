@@ -27,7 +27,19 @@ internal data class PieceLook(
     val stale: Boolean,
     /** Footprint: 0 solid blue, 1 saving (yellow dashes), 2 unsaved (white dashes). */
     val footprint: Int,
-)
+) {
+    /** One colour per piece, by priority stale > error > selected > normal (QA #1 q1-3: the red stayed under the grey). */
+    val tint: PieceTint
+        get() =
+            when {
+                stale -> PieceTint.STALE
+                verdict == Verdict.COLLIDES -> PieceTint.ERROR
+                selected -> PieceTint.SELECTED
+                else -> PieceTint.NORMAL
+            }
+}
+
+internal enum class PieceTint { STALE, ERROR, SELECTED, NORMAL }
 
 /**
  * One piece of furniture (design `entities3d.piece`): the size box (12 edge bars + six see-through
@@ -152,13 +164,14 @@ internal class PieceView(parent: Entity, private val meshes: FitMeshes, private 
         if (l == lastLook) return
         lastLook = l
         val wire = l.look == Look.WIRE
-        val error = l.verdict == Verdict.COLLIDES
+        val tint = l.tint
+        val error = tint == PieceTint.ERROR
         val edgeMat =
-            when {
-                l.stale -> m.edgeStale
-                error -> m.edgeError
-                l.selected -> m.edgeSelected
-                else -> m.edge
+            when (tint) {
+                PieceTint.STALE -> m.edgeStale
+                PieceTint.ERROR -> m.edgeError
+                PieceTint.SELECTED -> m.edgeSelected
+                PieceTint.NORMAL -> m.edge
             }
         edges.forEachIndexed { i, b ->
             b.material(edgeMat)
@@ -176,7 +189,7 @@ internal class PieceView(parent: Entity, private val meshes: FitMeshes, private 
                 skin[k].show(true)
                 skin[k].material(
                     when {
-                        l.stale -> m.stale
+                        tint == PieceTint.STALE -> m.stale
                         error -> if (b.finish == Finish.FABRIC) m.fabricError else m.woodError
                         else -> if (b.finish == Finish.FABRIC) m.fabric else m.wood
                     }

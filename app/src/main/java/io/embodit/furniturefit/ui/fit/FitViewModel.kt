@@ -104,8 +104,9 @@ class FitViewModel(
                 if (!s.dragEnabled || s.pieces.none { it.id == e.id }) return
                 update { it.copy(dragging = e.id, selected = e.id, sizing = null) }
             }
-            is FitEvent.DragEnded -> dragEnded(e.id, e.center)
-            FitEvent.RotateClicked -> mutateSelected("rotate") { p, room -> FitRules.snap(FitRules.rotate(p, room), room, _state.value.pieces).first }
+            is FitEvent.DragEnded -> dragEnded(e.id, e.center, e.yaw)
+            FitEvent.RotateClicked -> mutateSelected("rotate") { p, room -> settle(FitRules.rotate(p, room), room) }
+            is FitEvent.PieceTurned -> turned(e.id, e.yaw)
             FitEvent.DeleteClicked -> deleteSelected()
             FitEvent.SizeClicked -> toggleSizing()
             is FitEvent.SizingRow -> update { st -> st.copy(sizing = st.sizing?.copy(row = e.row.coerceIn(0, 2), fresh = true)) }
@@ -189,7 +190,7 @@ class FitViewModel(
         update { it.copy(selected = id, sizing = if (it.sizing?.pieceId == id) it.sizing else null) }
     }
 
-    private fun dragEnded(id: Int, center: P2?) {
+    private fun dragEnded(id: Int, center: P2?, yaw: Float?) {
         val s = _state.value
         if (s.dragging != id) return
         if (center == null || !center.isFinite()) {
@@ -198,11 +199,33 @@ class FitViewModel(
         }
         val piece = s.pieces.firstOrNull { it.id == id } ?: return
         pushUndo()
-        val (snapped, sides) = FitRules.snap(piece.copy(center = center), roomWithAxis(s.room), s.pieces)
-        if (sides.isNotEmpty()) _effects.tryEmit(FitEffect.Feedback("snap"))
+        val moved = piece.copy(center = center, yaw = yaw?.takeIf { it.isFinite() } ?: piece.yaw)
+        val (snapped, sides, outline) = FitRules.settle(moved, roomWithAxis(s.room), s.pieces)
+        if (sides.isNotEmpty() || outline != null) _effects.tryEmit(FitEffect.Feedback("snap"))
         update { st -> st.copy(dragging = null, selected = id, pieces = st.pieces.map { if (it.id == id) snapped else it }) }
-        FitLog.i(String.format(Locale.US, "PIECE move id=%d center=(%.3f, %.3f) snapped=%s verdict=%s", id, snapped.center.x, snapped.center.z, sides.joinToString("+") { it.name.lowercase() }, _state.value.verdict(id)))
+        FitLog.i(String.format(Locale.US, "PIECE move id=%d center=(%.3f, %.3f) yaw=%.1f snapped=%s outline=%s verdict=%s", id, snapped.center.x, snapped.center.z, Math.toDegrees(snapped.yaw.toDouble()), sides.joinToString("+") { it.name.lowercase() }, outline ?: "-", _state.value.verdict(id)))
         if (_state.value.coach) dismissCoach("first_drag")
+        scheduleSave()
+    }
+
+    /** Outline snap first, then faces (FitRules.settle); a snap gives the snap feedback. */
+    private fun settle(p: Piece, room: RoomModel): Piece {
+        val (next, sides, outline) = FitRules.settle(p, room, _state.value.pieces)
+        if (sides.isNotEmpty() || outline != null) _effects.tryEmit(FitEffect.Feedback("snap"))
+        if (outline != null) FitLog.i("PIECE outline id=${p.id} real=$outline")
+        return next
+    }
+
+    /** The stick turned [id] to [yaw] (live in the scene); written once on release, like a drag. */
+    private fun turned(id: Int, yaw: Float) {
+        val s = _state.value
+        if (!yaw.isFinite() || !s.dragEnabled || s.dragging == id) return
+        val p = s.pieces.firstOrNull { it.id == id } ?: return
+        pushUndo()
+        val room = roomWithAxis(s.room)
+        val next = settle(FitRules.pushOut(p.copy(yaw = yaw), room), room)
+        update { st -> st.copy(pieces = st.pieces.map { if (it.id == id) next else it }) }
+        FitLog.i(String.format(Locale.US, "PIECE turn id=%d center=(%.3f, %.3f) yaw=%.1f verdict=%s", id, next.center.x, next.center.z, Math.toDegrees(next.yaw.toDouble()), _state.value.verdict(id)))
         scheduleSave()
     }
 
@@ -268,7 +291,7 @@ class FitViewModel(
             "ok" -> {
                 val dims = sz.dims(s.unit) ?: return
                 update { it.copy(sizing = null) }
-                mutateSelected("resize") { p, room -> FitRules.snap(FitRules.pushOut(p.copy(dims = dims), room), room, _state.value.pieces).first }
+                mutateSelected("resize") { p, room -> settle(FitRules.pushOut(p.copy(dims = dims), room), room) }
             }
             "back" -> {
                 val t = sz.texts[sz.row]

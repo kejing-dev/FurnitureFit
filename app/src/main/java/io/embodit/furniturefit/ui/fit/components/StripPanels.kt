@@ -86,13 +86,15 @@ private fun inkKeyColors() = IconButtonDefaults.iconButtonColors(containerColor 
 
 /**
  * The piece strip (design `panels.pieceStrip`, collapsed): verdict badge · size button · turn 90° ·
- * remove. No close key: a tap on the floor deselects.
+ * remove, and one line of hint for the controller stick (v0.1.1). No close key: a tap on the floor
+ * deselects.
  */
 @Composable
 internal fun PieceStrip(state: FitUiState?, onEvent: (FitEvent) -> Unit) {
     TagCard(PanelSizes.STRIP_W, PanelSizes.STRIP_H) {
         val piece = state?.selectedPiece ?: return@TagCard
-        Row(modifier = Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             VerdictBadge(state.verdict(piece.id))
             SizeButton(text = Units.dims(piece.dims, state.unit), selected = false, onEvent = onEvent, modifier = Modifier.weight(1f))
             IconButton(
@@ -108,6 +110,8 @@ internal fun PieceStrip(state: FitUiState?, onEvent: (FitEvent) -> Unit) {
                 colors = inkKeyColors(),
                 size = IconButtonDefaults.iconButtonSize(width = KeyW, height = KeyH),
             ) { Icon(painter = painterResource(R.drawable.ic_trash), contentDescription = rs(R.string.action_remove), modifier = Modifier.size(24.dp), tint = FitColors.White) }
+        }
+        Text(text = rs(R.string.hint_stick), color = FitColors.White.copy(alpha = 0.72f), style = FitType.hint, maxLines = 1, modifier = Modifier.fillMaxWidth().padding(start = 4.dp).probe("hint_stick"))
         }
     }
 }

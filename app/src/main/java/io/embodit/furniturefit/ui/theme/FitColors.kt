@@ -53,6 +53,9 @@ object FitType {
     val body: TextStyle
         @Composable get() = PicoTheme.typography.bodyLargeMultiline.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium)
 
+    val hint: TextStyle
+        @Composable get() = PicoTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium)
+
     val title: TextStyle
         @Composable get() = PicoTheme.typography.headlineLarge.copy(fontSize = 24.sp, lineHeight = 30.sp)
 

@@ -6,6 +6,7 @@ import io.embodit.furniturefit.data.PrefsLayoutStore
 import io.embodit.furniturefit.platform.anchor.WorldAnchorGateway
 import io.embodit.furniturefit.platform.sense.MeshTracker
 import io.embodit.furniturefit.platform.sense.PlaneTracker
+import io.embodit.furniturefit.platform.tracking.ControllerStick
 import io.embodit.furniturefit.platform.tracking.HeadTracker
 
 /**
@@ -17,6 +18,7 @@ object FitGraph {
     val planes = PlaneTracker()
     val mesh = MeshTracker()
     val head = HeadTracker()
+    val stick = ControllerStick()
 
     @Volatile private var store: LayoutStore? = null
 

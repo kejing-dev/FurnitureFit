@@ -24,6 +24,7 @@ import io.embodit.furniturefit.domain.Gap
 import io.embodit.furniturefit.domain.GapKind
 import io.embodit.furniturefit.domain.HeadPose
 import io.embodit.furniturefit.domain.P2
+import io.embodit.furniturefit.domain.PanelDodge
 import io.embodit.furniturefit.domain.PanelFacing
 import io.embodit.furniturefit.domain.Piece
 import io.embodit.furniturefit.domain.Quat4
@@ -31,6 +32,7 @@ import io.embodit.furniturefit.domain.RoomModel
 import io.embodit.furniturefit.domain.Units
 import io.embodit.furniturefit.domain.Vec3
 import io.embodit.furniturefit.domain.Verdict
+import io.embodit.furniturefit.domain.wrapAngle
 import io.embodit.furniturefit.platform.FitGraph
 import io.embodit.furniturefit.platform.FitLog
 import io.embodit.furniturefit.ui.fit.FitEvent
@@ -105,6 +107,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
     private val main = Handler(Looper.getMainLooper())
     private var scope: CoroutineScope? = null
     private val head = FitGraph.head
+    private val stick = FitGraph.stick
     private val planes = FitGraph.planes
     private val mesh = FitGraph.mesh
     private var content: SpatialViewContent? = null
@@ -168,8 +171,28 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
 
     private var glide: Glide? = null
 
-    /** Live centre of the piece being dragged (system drag or debug glide), already snapped. */
+    /** Live pose of the piece being dragged (system drag or debug glide, already snapped) or turned by the stick. */
     private var livePiece: Piece? = null
+
+    /** The dragged piece and its unsnapped centre: re-snapped every frame while the stick turns it. */
+    private var liveRaw: Pair<Int, P2>? = null
+
+    /** Heading the stick gave the dragged piece (kept after the stick lets go, until the drag ends). */
+    private var dragYaw: Pair<Int, Float>? = null
+
+    // ---- thumbstick turn (v0.1.1): live here, written once on release (FitEvent.PieceTurned)
+    private class Turn(val pieceId: Int, var yaw: Float) {
+        var neutralSinceMs = -1L
+        var frames = 0
+    }
+
+    private var turn: Turn? = null
+    private var awaitTurnCommit: Pair<Int, Long>? = null
+    private var lastFrameMs = -1L
+
+    // ---- outline snap confirmation: piece id -> the real furniture it stands on; outline id -> flash start
+    private val onOutline = HashMap<Int, String>()
+    private val outlineFlash = HashMap<String, Long>()
 
     // =========================================================================================
     // lifecycle
@@ -209,6 +232,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         rig.world(PanelIds.COACH, PanelSizes.COACH_W, PanelSizes.COACH_H, COACH_SCALE)
         for (i in 0 until PanelIds.GAP_SLOTS) rig.world(PanelIds.gap(i), PanelSizes.GAP_W, PanelSizes.GAP_H, 1f)
         head.start()
+        stick.start()
         FitGraph.anchors.start()
         ActiveScene.scene = this
         attached = true
@@ -273,7 +297,9 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         planes.stop()
         mesh.stop("pause")
         head.stop()
+        stick.stop()
         endDrag(cancelled = true)
+        turn = null
         FitLog.i("SCENE paused")
     }
 
@@ -281,6 +307,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         if (!paused || !attached) return
         paused = false
         head.start()
+        stick.start()
         startSensing()
         FitLog.i("SCENE resumed")
     }
@@ -306,6 +333,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         planes.stop()
         mesh.stop("detach")
         head.stop()
+        stick.stop()
         FitGraph.anchors.stop()
         panelShown.clear()
         gapPlates.clear()
@@ -333,8 +361,15 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         drag = null
         glide = null
         livePiece = null
+        liveRaw = null
+        dragYaw = null
+        turn = null
+        awaitTurnCommit = null
+        onOutline.clear()
+        outlineFlash.clear()
         libraryFollow.reset()
         snackFollow.reset()
+        libraryBeforeDialog = null
         FitLog.i("SCENE detached")
     }
 
@@ -376,7 +411,17 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
             meshRestartMs = now
         }
         lastPieceCount = state.pieces.size
-        if (before.dragging != null && state.dragging == null) livePiece = null
+        if (before.dragging != null && state.dragging == null) {
+            livePiece = null
+            liveRaw = null
+            dragYaw = null
+        }
+        awaitTurnCommit?.let { (id, _) ->
+            if (state.pieces.firstOrNull { it.id == id } != before.pieces.firstOrNull { it.id == id }) {
+                awaitTurnCommit = null
+                if (turn == null && liveRaw == null) livePiece = null
+            }
+        }
         panels(state)
     }
 
@@ -390,9 +435,13 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         val dialogOn = state.clearDialog || state.blocked
         val dialog = rig[PanelIds.DIALOG]
         if (dialogOn && dialog?.shown != true && hasHead) {
-            val at = pose.position + pose.level().at(0f) * DIALOG_M + Vec3(0f, -0.05f, 0f)
+            val at = restAt(pose, 0f, gazePitchDeg(pose), DIALOG_M) + Vec3(0f, -0.05f, 0f)
             dialog?.show(at)
-        } else if (!dialogOn) dialog?.hide()
+            dodgeLibrary(at)
+        } else if (!dialogOn) {
+            dialog?.hide()
+            undodgeLibrary()
+        }
         if (state.snack != null) rig[PanelIds.SNACK]?.show() else {
             rig[PanelIds.SNACK]?.hide()
             snackFollow.reset()
@@ -423,15 +472,17 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
             rebuildRoom(now)
             manageMesh(now)
             stepGlide(now)
+            stepStick(now)
             drawPieces(now)
             drawGaps()
             drawRoomMarks()
         }
         if (hasHead) placePanels(now)
         rig.faceViewer(pose.position)
+        lastFrameMs = now
         if (now - lastLogMs > LOG_MS) {
             lastLogMs = now
-            FitLog.i("FRAME n=$frames head=${FitLog.pos(pose.position)} fwd=${FitLog.pos(pose.forward)} pieces=${ui.pieces.size} planes=${planes.all.size} mesh=${mesh.anchorCount}/${mesh.points().size} running=${mesh.running}")
+            FitLog.i("FRAME n=$frames head=${FitLog.pos(pose.position)} fwd=${FitLog.pos(pose.forward)} pieces=${ui.pieces.size} planes=${planes.all.size} mesh=${mesh.anchorCount}/${mesh.points().size} running=${mesh.running} stick=${stick.status()}")
         }
     }
 
@@ -493,6 +544,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
                 if (t >= 1f) riseStart.remove(p.id)
             }
             v.pose(p.center, p.yaw, floorY, lift)
+            confirmOutline(p, v, now)
             v.animate(now)
             val isInside = hasHead && FitRules.inside(p, pose.position)
             if (isInside && inside == null) inside = p.id
@@ -520,6 +572,92 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
     }
 
     private fun room(): RoomModel = ui.room
+
+    /**
+     * A piece that comes to stand on a real-furniture outline (outline snap) gets a short confirmation:
+     * its footprint is taped down again and the outline flashes yellow for 0.8 s.
+     */
+    private fun confirmOutline(p: Piece, v: PieceView, now: Long) {
+        val on = FitRules.outlineOf(p, room())
+        val was = onOutline[p.id]
+        if (on == null) {
+            if (was != null) onOutline.remove(p.id)
+            return
+        }
+        onOutline[p.id] = on
+        if (was == null) {
+            outlineFlash[on] = now
+            v.slap(now)
+            FitLog.i("SNAP outline piece=${p.id} real=$on")
+        }
+    }
+
+    // =========================================================================================
+    // thumbstick turn
+    // =========================================================================================
+
+    /** The stick may turn a piece now: the dragged one, else the selected one. */
+    private fun turnTarget(): Int? {
+        val s = ui
+        if (!s.dragEnabled || s.menuOpen || s.sizing != null) return null
+        return s.dragging ?: s.selected
+    }
+
+    /**
+     * Thumbstick X turns the target piece about its own vertical axis (FitRules.stickRateDeg: dead zone,
+     * square curve, 90 deg/s). After 150 ms back in the dead zone the turn is written (snap there).
+     */
+    private fun stepStick(now: Long) {
+        val dt = if (lastFrameMs < 0) 0f else ((now - lastFrameMs) / 1000f).coerceIn(0f, 0.1f)
+        val rate = FitRules.stickRateDeg(stick.x(now))
+        val target = turnTarget()
+        turn?.let { t -> if (t.pieceId != target) finishTurn("target") }
+        awaitTurnCommit?.let { (_, at) ->
+            if (now - at > COMMIT_WAIT_MS) {
+                awaitTurnCommit = null
+                if (turn == null && liveRaw == null) livePiece = null
+            }
+        }
+        if (rate != 0f && target != null) {
+            val t = turn ?: run {
+                val from = livePieces().firstOrNull { it.id == target } ?: return
+                Turn(target, from.yaw).also {
+                    turn = it
+                    FitLog.i(String.format(Locale.US, "STICK turn start piece=%d yaw=%.1f x=%.2f", target, Math.toDegrees(from.yaw.toDouble()), stick.x(now)))
+                }
+            }
+            t.yaw = wrapAngle(t.yaw + Math.toRadians((rate * dt).toDouble()).toFloat())
+            t.neutralSinceMs = -1L
+            t.frames++
+            if (liveRaw?.first == target) refreshLive() else ui.pieces.firstOrNull { it.id == target }?.let { livePiece = it.copy(yaw = t.yaw) }
+        } else {
+            val t = turn ?: return
+            if (t.neutralSinceMs < 0) t.neutralSinceMs = now else if (now - t.neutralSinceMs >= STICK_RELEASE_MS) finishTurn("release")
+        }
+    }
+
+    private fun finishTurn(why: String) {
+        val t = turn ?: return
+        turn = null
+        FitLog.i(String.format(Locale.US, "STICK turn end piece=%d yaw=%.1f frames=%d why=%s", t.pieceId, Math.toDegrees(t.yaw.toDouble()), t.frames, why))
+        if (liveRaw?.first == t.pieceId) {
+            // still dragged: the heading rides with the drag and is written on release
+            dragYaw = t.pieceId to t.yaw
+            return
+        }
+        if (ui.pieces.none { it.id == t.pieceId }) {
+            livePiece = null
+            return
+        }
+        awaitTurnCommit = t.pieceId to SystemClock.elapsedRealtime()
+        sink(FitEvent.PieceTurned(t.pieceId, t.yaw))
+    }
+
+    /** Debug `stick`: the stick reads [x] for [ms]. */
+    fun debugStick(x: Float, ms: Long): String {
+        stick.debugHold(x, ms)
+        return String.format(Locale.US, "stick x=%.2f ms=%d target=%s", x, ms, turnTarget()?.toString() ?: "-")
+    }
 
     /** Gap tapes and reading plates of the focus piece (dragged or selected). */
     private fun drawGaps() {
@@ -563,10 +701,25 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         val doors = liveResults.values.flatMap { it.doors }.toSet()
         val zones = room.doorZones.filter { it.id in doors || ui.obstaclesShown }
         for (i in doorRects.indices) zones.getOrNull(i)?.let { doorRects[i].draw(it.prism, floorY, 0.02f) } ?: doorRects[i].hide()
-        val hits = liveResults.values.flatMap { it.hitReal }.toSet()
-        val reals = room.real.filter { it.id in hits }
-        for (i in realRects.indices) reals.getOrNull(i)?.let { realRects[i].draw(it.prism, floorY, 0.02f) } ?: realRects[i].hide()
         val m = materials ?: return
+        val now = SystemClock.elapsedRealtime()
+        outlineFlash.entries.removeAll { now - it.value > OUTLINE_FLASH_MS }
+        // real furniture: flashing (just snapped onto) > hit (red) > near the focus piece (white snap target)
+        val hits = if (ui.trackingLost) emptySet() else liveResults.values.flatMap { it.hitReal }.toSet()
+        val focusId = turn?.pieceId ?: ui.dragging ?: ui.selected
+        val focus = focusId?.let { id -> livePieces().firstOrNull { it.id == id } }
+        val near = if (focus != null && !ui.trackingLost) FitRules.outlinesNear(focus, room).map { it.id }.toSet() else emptySet()
+        val reals = room.real.filter { it.id in outlineFlash || it.id in hits || it.id in near }.sortedBy { if (it.id in outlineFlash) 0 else if (it.id in hits) 1 else 2 }
+        for (i in realRects.indices) {
+            val o = reals.getOrNull(i)
+            if (o == null) {
+                realRects[i].hide()
+                continue
+            }
+            val flashing = o.id in outlineFlash
+            realRects[i].edge(if (flashing) m.tapeSaving else if (o.id in hits) m.realEdge else m.tapeUnsaved)
+            realRects[i].draw(o.prism, floorY, if (flashing) 0.035f else 0.02f)
+        }
         val meshes = meshes ?: return
         val root = stageRoot ?: return
         val obstacles = if (ui.obstaclesShown) room.obstacles else emptyList()
@@ -584,16 +737,58 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
     // panels in the room
     // =========================================================================================
 
+    /** Where the library stood before a dialog pushed it aside (null: not pushed). */
+    private var libraryBeforeDialog: Vec3? = null
+
+    /**
+     * A dialog opens 0.9 m ahead; the library rests 0.6 m away and would hide it when it is in front
+     * (QA #2 q2-1 / q2-2). If it hides any part of the dialog from where the head is, it slides beside
+     * the dialog at its height (PanelDodge.aside) for as long as the dialog is open, then back.
+     */
+    private fun dodgeLibrary(dialogAt: Vec3) {
+        val lib = rig?.get(PanelIds.LIBRARY) ?: return
+        val libAt = libraryFollow.position ?: lib.position
+        val eye = pose.position
+        val d = PanelDodge.view(eye, dialogAt, PanelSizes.DIALOG_W * DP_M * DIALOG_SCALE, PanelSizes.DIALOG_H * DP_M * DIALOG_SCALE)
+        val l = PanelDodge.view(eye, libAt, PanelSizes.LIBRARY_W * DP_M * LIBRARY_SCALE, PanelSizes.LIBRARY_H * DP_M * LIBRARY_SCALE)
+        if (!PanelDodge.overlaps(d, l)) {
+            FitLog.i(String.format(Locale.US, "DIALOG library clear lib=(%.1f, %.1f) dialog=(%.1f, %.1f)", l.yawDeg, l.elevDeg, d.yawDeg, d.elevDeg))
+            return
+        }
+        val to = PanelDodge.aside(eye, d, l)
+        if (libraryBeforeDialog == null) libraryBeforeDialog = libAt
+        libraryFollow.slideTo(to, SystemClock.elapsedRealtime())
+        FitLog.i(String.format(Locale.US, "DIALOG library aside from=%s to=%s lib=(%.1f, %.1f) dialog=(%.1f, %.1f)", FitLog.pos(libAt), FitLog.pos(to), l.yawDeg, l.elevDeg, d.yawDeg, d.elevDeg))
+    }
+
+    private fun undodgeLibrary() {
+        val back = libraryBeforeDialog ?: return
+        libraryBeforeDialog = null
+        libraryFollow.slideTo(back, SystemClock.elapsedRealtime())
+        FitLog.i("DIALOG library back to=${FitLog.pos(back)}")
+    }
+
     /** Library rest pose (`panels.library.placement`): 18 degrees left, 26 down, 0.6 m. */
     private fun libraryRest(h: HeadPose): Vec3 = restAt(h, LIBRARY_LEFT_DEG, -LIBRARY_DOWN_DEG, LIBRARY_M)
 
-    /** Snackbar: 14 degrees above the centre of view, 0.9 m. */
-    private fun snackRest(h: HeadPose): Vec3 = restAt(h, 0f, SNACK_UP_DEG, SNACK_M)
+    /**
+     * Snackbar: 14 degrees above the centre of view, 0.9 m. Measured from the real gaze (QA #1 q1-2: from
+     * the level gaze it was 51 degrees above the view when looking down 37 and never came into view).
+     */
+    private fun snackRest(h: HeadPose): Vec3 {
+        val up = gazePitchDeg(h) + SNACK_UP_DEG
+        // looking down it would sink into the library (26 deg below level, 18 left): it moves 12 deg right instead
+        val left = if (up < -LIBRARY_DOWN_DEG + SNACK_CLEAR_LIBRARY_DEG) -SNACK_SIDESTEP_DEG else 0f
+        return restAt(h, left, up, SNACK_M)
+    }
+
+    /** The gaze's pitch (degrees, up +), held within +-60 so a rest pose never lands overhead or underfoot. */
+    private fun gazePitchDeg(h: HeadPose): Float = Math.toDegrees(asin(h.forward.y.coerceIn(-1f, 1f).toDouble())).toFloat().coerceIn(-GAZE_PITCH_MAX_DEG, GAZE_PITCH_MAX_DEG)
 
     private fun restAt(h: HeadPose, leftDeg: Float, upDeg: Float, dist: Float): Vec3 {
         val f = h.level()
         val l = Math.toRadians(leftDeg.toDouble()).toFloat()
-        val u = Math.toRadians(upDeg.toDouble()).toFloat()
+        val u = Math.toRadians(upDeg.coerceIn(-80f, 80f).toDouble()).toFloat()
         val left = P2(f.z, -f.x)
         val d = (f * cos(l) + left * sin(l)).normalized()
         return h.position + d.at(0f) * (dist * cos(u)) + Vec3(0f, dist * sin(u), 0f)
@@ -602,7 +797,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
     private fun placePanels(now: Long) {
         val rig = rig ?: return
         val lib = rig[PanelIds.LIBRARY] ?: return
-        val hold = ui.menuOpen || ui.clearDialog || now - lastLibraryPressMs < KEY_HOLD_MS
+        val hold = ui.menuOpen || ui.clearDialog || ui.blocked || now - lastLibraryPressMs < KEY_HOLD_MS
         libraryFollow.step(pose, now, hold)?.let { lib.moveTo(it) }
         val facing = FacePanelOf(lib.position)
         val libW = PanelSizes.LIBRARY_W * DP_M * LIBRARY_SCALE
@@ -751,11 +946,17 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         FitLog.i("DRAG begin piece=${d.pieceId} grab_y=${String.format(Locale.US, "%.3f", d.grabY)} depth=${String.format(Locale.US, "%.2f", d.equivalent)}")
     }
 
-    /** The dragged piece's new footprint centre: snapped live (`rules.snap`, "while moving and on release"). */
+    /** The dragged piece's new footprint centre: snapped live (`rules.snap`, "while moving and on release"; outline snap first). */
     private fun moveLive(id: Int, center: P2) {
+        liveRaw = id to center
+        refreshLive()
+    }
+
+    private fun refreshLive() {
+        val (id, center) = liveRaw ?: return
         val p = ui.pieces.firstOrNull { it.id == id } ?: return
-        val (snapped, _) = FitRules.snap(p.copy(center = center), room(), ui.pieces)
-        livePiece = snapped
+        val yaw = turn?.takeIf { it.pieceId == id }?.yaw ?: dragYaw?.takeIf { it.first == id }?.second ?: p.yaw
+        livePiece = FitRules.settle(p.copy(center = center, yaw = yaw), room(), ui.pieces).piece
     }
 
     private fun endDrag(cancelled: Boolean) {
@@ -763,7 +964,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         val id = drag?.pieceId ?: glide?.pieceId ?: live?.id ?: ui.dragging ?: return
         drag = null
         glide = null
-        sink(FitEvent.DragEnded(id, if (cancelled) null else live?.center))
+        sink(FitEvent.DragEnded(id, if (cancelled) null else live?.center, if (cancelled) null else live?.yaw))
     }
 
     private fun stepGlide(now: Long) {
@@ -811,6 +1012,7 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         if (drag == null && glide == null && ui.dragging == null) return
         endDrag(cancelled = true)
         livePiece = null
+        liveRaw = null
     }
 
     fun debugDragEnd(): String {
@@ -884,7 +1086,13 @@ class FitScene(private val sink: (FitEvent) -> Unit) {
         const val MESH_IDLE_MS = 10_000L
         const val LOG_MS = 5_000L
         const val MAX_DOORS = 4
-        const val MAX_REAL = 6
+        const val MAX_REAL = 8
+        const val STICK_RELEASE_MS = 150L
+        const val COMMIT_WAIT_MS = 600L
+        const val OUTLINE_FLASH_MS = 800L
+        const val GAZE_PITCH_MAX_DEG = 60f
+        const val SNACK_CLEAR_LIBRARY_DEG = 10f
+        const val SNACK_SIDESTEP_DEG = 12f
         const val MAX_DEBUG = 64
     }
 }
@@ -907,6 +1115,24 @@ internal class LazyFollow(private val name: String, private val rest: (HeadPose)
         slideStartMs = NEVER
         outSinceMs = NEVER
         lastWritten = null
+    }
+
+    /** Where it rests (or is sliding to); null before the first park. */
+    val position: Vec3?
+        get() = if (slideStartMs != NEVER) to else at
+
+    /** Slides to [p] now (0.35 s) and rests there; following resumes from that spot. */
+    fun slideTo(p: Vec3, nowMs: Long) {
+        val current = at
+        if (current == null) {
+            at = p
+            lastWritten = null
+            return
+        }
+        from = current
+        to = p
+        slideStartMs = nowMs
+        outSinceMs = NEVER
     }
 
     fun step(head: HeadPose, nowMs: Long, hold: Boolean): Vec3? {
