@@ -12,7 +12,7 @@ Will a 1.6 m sofa fit? Tap a tile and the piece lands 1:1 on your real floor. Ho
 >
 > - v0.1.2 在 PICO 6.1 模拟器上验证过（QA 第 3 轮通过）。**还没装到头显上**：头显里现在是 v0.1.1，v0.1.2 要等用户插上头显自己装、自己验。v0.1.2 passed QA round 3 on the PICO 6.1 emulator. **It is not on a headset yet**: the headset still has v0.1.1, and v0.1.2 waits for the user to install and check it.
 > - **家具在真实房间里的落点精度、摇杆手感和吸附范围都没有在真机上验证。** Placement accuracy in a real room, thumbstick feel and snap range have not been checked on a device.
-> - 有 4 个已知小问题（见下文「已知问题」）。There are 4 known minor issues (see below).
+> - 有 4 个已知小问题，另外 v0.1.2 还没在真机上验证（见下文「已知问题」）。There are 4 known minor issues, and v0.1.2 is unverified on a headset (see below).
 > - 截图和视频都来自模拟器，由调试命令和模拟器输入驱动，**不是真实手势录像**。Screenshots and video come from the emulator, driven by debug commands and injected emulator input. **This is not a recording of real hand gestures.**
 
 ## v0.1.2 新增 What's new
@@ -75,6 +75,7 @@ Minor issues listed by QA round 3; they do not block the release:
 2. **小轮廓的吸附闪光看不见**。真实家具的轮廓比摆进去的家具小时（比如床脚只有 25×27 cm），吸附时 0.8 秒的黄色闪光会被家具挡住，只能靠颜色从红变正常来判断吸上了。When the real outline is smaller than the piece (a 25 × 27 cm bed foot, for example), the piece hides the 0.8 s yellow snap flash; only the colour change from red shows the snap.
 3. **「摇杆左右转动」提示字小**。家具离人 2 米以上时不太好认。The "turn with the thumbstick" hint is small and hard to read beyond 2 m.
 4. **模拟器里摇杆转动偏慢**。模拟器空闲时帧率只有 2 fps；真机帧率正常，不受影响。On the emulator the turn can be slow (it idles at 2 fps); not an issue at normal frame rates.
+5. **v0.1.2 没有在真机上验证**。头显里还是 v0.1.1；摇杆手感、虚线框吸附范围、对话框让开、落点精度等都只在模拟器上看过，逐项见下面「真机待验」。v0.1.2 has not been checked on a headset (it still runs v0.1.1); the items below are unverified.
 
 ## 真机待验 To check on a headset
 
