@@ -4,9 +4,9 @@
 
 | 会话 | 标题 | 行数 |
 |---|---|---|
-| `f48134ff` | [furniture-fit] design #1 · 设计包 + 样稿 | 1127 |
 | `b8a239b3` | [furniture-fit] build #1 · 家具试摆 | 1934 |
 | `a0d3e6e6` | [furniture-fit] build #2 · 摇杆旋转 + 吸附 | 1245 |
 | `e7c3a0a9` | [furniture-fit] QA #2 · 摇杆旋转 + 吸附 v0.1.1 | 1728 |
 | `5e653812` | [furniture-fit] showcase · 家具试摆 第一跑 | 1068 |
 | `aef00a1a` | [furniture-fit] QA #1 · 家具试摆 | 1683 |
+| `f48134ff` | [furniture-fit] design #1 · 设计包 + 样稿 | 1127 |
