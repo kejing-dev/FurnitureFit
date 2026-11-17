@@ -7,6 +7,7 @@ import io.embodit.furniturefit.mainApp
 class SpatialApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        SpatialDataPermission.install(this)
         launch(::mainApp)
     }
 }

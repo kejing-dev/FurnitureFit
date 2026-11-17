@@ -35,6 +35,13 @@ class PlaneTracker {
         // subscribe first, then start: no event is lost
         subscription = PlaneTrackingManager.subscribeAnchorUpdate { u -> if (Looper.myLooper() == Looper.getMainLooper()) handle(u) else main.post { handle(u) } }
         runCatching { PlaneTrackingManager.start() }.onFailure { FitLog.e("PLANES start failed: $it", it) }
+        io.embodit.furniturefit.platform.SpatialDataPermission.whenGranted {
+            if (subscription != null) {
+                runCatching { PlaneTrackingManager.stop() }
+                runCatching { PlaneTrackingManager.start() }
+                android.util.Log.i("SpatialData", "PlaneTrackingManager restarted after grant")
+            }
+        }
         FitLog.i("PLANES tracking started state=${runCatching { PlaneTrackingManager.state }.getOrNull()}")
     }
 
@@ -119,6 +126,13 @@ class MeshTracker {
         if (subscription != null) return
         subscription = MeshTrackingManager.subscribeAnchorUpdate { u -> if (Looper.myLooper() == Looper.getMainLooper()) handle(u) else main.post { handle(u) } }
         runCatching { MeshTrackingManager.start() }.onFailure { FitLog.e("MESH start failed: $it", it) }
+        io.embodit.furniturefit.platform.SpatialDataPermission.whenGranted {
+            if (subscription != null) {
+                runCatching { MeshTrackingManager.stop() }
+                runCatching { MeshTrackingManager.start() }
+                android.util.Log.i("SpatialData", "MeshTrackingManager restarted after grant")
+            }
+        }
         running = true
         lastNewAtMs = SystemClock.elapsedRealtime()
         FitLog.i("MESH tracking started state=${runCatching { MeshTrackingManager.state }.getOrNull()} kept_anchors=${anchors.size}")
